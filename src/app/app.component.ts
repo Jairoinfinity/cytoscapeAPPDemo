@@ -9,10 +9,29 @@ import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 export class AppComponent implements OnInit {
   public cy: any;
   public nodeId1: String = null;
-  public nodeStyle: any = { 
+  public nodeStyle: any = {
     node: null,
     backgroundStyle: null
   };
+  public linkingFeldStyle: any = {
+    "text-valign": "center",
+    "text-halign": "left",
+    'label': 'data(id) ',
+    'background-color': '#4287f5',
+    "shape": "tag",
+    "width": "10",
+    "height": "10"
+  }
+
+  public dataFieldStyle: any = {
+    'label': 'data(id)',
+    "text-valign": "center",
+    "text-halign": "left",
+    'background-color': '#32a836',
+    "shape": "round-tag",
+    "width": "10",
+    "height": "10"
+  }
 
   constructor() { }
 
@@ -21,16 +40,20 @@ export class AppComponent implements OnInit {
 
       container: document.getElementById('cy'),
 
-      //   {
-      //     selector: 'edge',
-      //     style: {
-      //       'width': 3,
-      //       'line-color': '#ccc',
-      //       'target-arrow-color': '#ccc',
-      //       'target-arrow-shape': 'triangle'
-      //     }
-      //   }
-      // ],
+      style: [
+        {
+          selector: 'edge',
+          style: {
+            'width': 3,
+            'line-color': '#ccc',
+            'target-arrow-color': '#ccc',
+            'target-arrow-shape': 'triangle',
+            "curve-style": "unbundled-bezier",
+            "control-point-distances": [5, -5],
+            "control-point-weights": [0.250, 0.75]
+          }
+        }
+      ],
 
       layout: {
         name: 'grid',
@@ -64,22 +87,40 @@ export class AppComponent implements OnInit {
     //Nodos de pruebas
     this.cy.add(
       [
-        { group: 'nodes', data: { id: 'n0' }, position: { x: 100, y: 100 } },
-        { group: 'nodes', data: { id: 'n1' }, position: { x: 100, y: 150 } },
-        { group: 'nodes', data: { id: 'df' }, position: { x: 100, y: 200 } },
-        { group: 'nodes', data: { id: 'nrf' }, position: { x: 200, y: 100 } },
-        { group: 'nodes', data: { id: 'nref' }, position: { x: 200, y: 150 } },
-        { group: 'nodes', data: { id: 'derf' }, position: { x: 200, y: 200 } }
+        { group: 'nodes', data: { id: 'Task_ID' }, position: { x: 100, y: 100 } },
+        { group: 'nodes', data: { id: 'PDS-L1' }, position: { x: 100, y: 115 } },
+        { group: 'nodes', data: { id: 'PDS-L2' }, position: { x: 100, y: 130 } },
+        { group: 'nodes', data: { id: 'PDS-L3' }, position: { x: 100, y: 145 } },
+        { group: 'nodes', data: { id: 'PDS-L4' }, position: { x: 100, y: 160 } },
+        { group: 'nodes', data: { id: 'LOC-L1' }, position: { x: 100, y: 175 } },
+        { group: 'nodes', data: { id: 'LOC-L2' }, position: { x: 100, y: 190 } },
+        { group: 'nodes', data: { id: 'LOC-L3' }, position: { x: 100, y: 205 } },
+        { group: 'nodes', data: { id: 'Name' }, position: { x: 100, y: 220 } },
+        { group: 'nodes', data: { id: 'Planned_Start' }, position: { x: 100, y: 235 } },
+        { group: 'nodes', data: { id: 'Planned_Finish' }, position: { x: 100, y: 250 } },
+        { group: 'nodes', data: { id: 'Weight' }, position: { x: 100, y: 265 } },
+        { group: 'nodes', data: { id: 'Description' }, position: { x: 100, y: 280 } },
+        { group: 'nodes', data: { id: 'PDS-L4-Description' }, position: { x: 100, y: 295 } }
       ]
     );
 
-    //Estilo de los nodos;
-    this.cy.style().selector('#n0').style({ 'background-color': '#F6F',"shape": "tag"}).update();
-    this.cy.style().selector('#n1').style({ 'background-color': '#F6F',"shape": "tag" }).update();
-    this.cy.style().selector('#df').style({ 'background-color': '#F6F',"shape": "tag" }).update();
-    this.cy.style().selector('#nrf').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
-    this.cy.style().selector('#nref').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
-    this.cy.style().selector('#derf').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
+    //Estilo de los nodos Linking Field;
+    this.cy.style().selector('#Task_ID').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#PDS-L3').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#PDS-L4').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#LOC-L1').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#LOC-L2').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#LOC-L3').style(this.linkingFeldStyle).update();
+    
+    //Estilo de los nodos Linking Field;
+    this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Planned_Start').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Planned_Finish').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Weight').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
 
     this.cy.nodes().on('click', function (e) {
       let idNode = this._private.data.id;
