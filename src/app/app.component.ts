@@ -9,7 +9,7 @@ import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 export class AppComponent implements OnInit {
   public cy: any;
   public nodeId1: String = null;
-  public nodeStyle: any = {
+  public nodeStyle: any = { 
     node: null,
     backgroundStyle: null
   };
@@ -65,21 +65,21 @@ export class AppComponent implements OnInit {
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'n0' }, position: { x: 100, y: 100 } },
-        { group: 'nodes', data: { id: 'n1' }, position: { x: 200, y: 150 } },
-        { group: 'nodes', data: { id: 'df' }, position: { x: 300, y: 200 } },
-        { group: 'nodes', data: { id: 'nrf' }, position: { x: 400, y: 100 } },
-        { group: 'nodes', data: { id: 'nref' }, position: { x: 500, y: 150 } },
-        { group: 'nodes', data: { id: 'derf' }, position: { x: 600, y: 200 } }
+        { group: 'nodes', data: { id: 'n1' }, position: { x: 100, y: 150 } },
+        { group: 'nodes', data: { id: 'df' }, position: { x: 100, y: 200 } },
+        { group: 'nodes', data: { id: 'nrf' }, position: { x: 200, y: 100 } },
+        { group: 'nodes', data: { id: 'nref' }, position: { x: 200, y: 150 } },
+        { group: 'nodes', data: { id: 'derf' }, position: { x: 200, y: 200 } }
       ]
     );
 
     //Estilo de los nodos;
-    this.cy.style().selector('#n0').style({ 'background-color': '#F6F' }).update();
-    this.cy.style().selector('#n1').style({ 'background-color': '#F6F' }).update();
-    this.cy.style().selector('#df').style({ 'background-color': '#F6F' }).update();
-    this.cy.style().selector('#nrf').style({ 'background-color': '#F65' }).update();
-    this.cy.style().selector('#nref').style({ 'background-color': '#F65' }).update();
-    this.cy.style().selector('#derf').style({ 'background-color': '#F65' }).update();
+    this.cy.style().selector('#n0').style({ 'background-color': '#F6F',"shape": "tag"}).update();
+    this.cy.style().selector('#n1').style({ 'background-color': '#F6F',"shape": "tag" }).update();
+    this.cy.style().selector('#df').style({ 'background-color': '#F6F',"shape": "tag" }).update();
+    this.cy.style().selector('#nrf').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
+    this.cy.style().selector('#nref').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
+    this.cy.style().selector('#derf').style({ 'background-color': '#F65',"shape": "round-tag" }).update();
 
     this.cy.nodes().on('click', function (e) {
       let idNode = this._private.data.id;
