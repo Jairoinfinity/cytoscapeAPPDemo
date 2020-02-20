@@ -16,31 +16,30 @@ export class AppComponent implements OnInit {
 
       container: document.getElementById('cy'), // container to render in
 
-      style: [ // the stylesheet for the graph
-        {
-          selector: 'node',
-          style: {
-            'background-color': '#F0F',
-            'label': 'data(id)'
-          }
-        },
+      // style: [
+      //   {
+      //     selector: 'node',
+      //     style: {
+            
+      //     }
+      //   },
 
-        {
-          selector: 'edge',
-          style: {
-            'width': 3,
-            'line-color': '#ccc',
-            'target-arrow-color': '#ccc',
-            'target-arrow-shape': 'triangle'
-          }
-        }
-      ],
+      //   {
+      //     selector: 'edge',
+      //     style: {
+      //       'width': 3,
+      //       'line-color': '#ccc',
+      //       'target-arrow-color': '#ccc',
+      //       'target-arrow-shape': 'triangle'
+      //     }
+      //   }
+      // ],
 
       layout: {
         name: 'grid',
         rows: 1
       },
-      //autolock:true
+      autolock:true
     });
 
     var setEdges = (node) => {
@@ -53,11 +52,10 @@ export class AppComponent implements OnInit {
     }
 
     var selectNode = (node) => {
-      this.cy.one('tap', node, function(){
-        console.log('tap!');
-      });
+      this.cy.style().selector('#'+node.data.id).style({'background-color': 'black'}).update();
     }
 
+    //Nodos de pruebas
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'n0' }, position: { x: 100, y: 100 } },
@@ -69,13 +67,21 @@ export class AppComponent implements OnInit {
       ]
     );
 
+    //Estilo de los nodos;
+    this.cy.style().selector('#n0').style({'background-color': '#F6F'}).update();
+    this.cy.style().selector('#n1').style({'background-color': '#F6F'}).update();
+    this.cy.style().selector('#df').style({'background-color': '#F6F'}).update();
+    this.cy.style().selector('#nrf').style({'background-color': '#F65'}).update();
+    this.cy.style().selector('#nref').style({'background-color': '#F65'}).update();
+    this.cy.style().selector('#derf').style({'background-color': '#F65'}).update();
+
     //this.cy.remove('#n0')
     this.cy.nodes().on('click', function (e) {
       let idNode = this._private.data.id;
       //console.log(e); //Toda la informacion con todos los nodos.
       console.log(this._private); //Información del nodo al que se dio click.
       setEdges(idNode);
-      selectNode(idNode);
+      selectNode(this._private);
     });
   }
 }
