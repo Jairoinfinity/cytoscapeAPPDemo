@@ -13,6 +13,7 @@ export class AppComponent implements OnInit {
     node: null,
     backgroundStyle: null
   };
+  public colorEdge: String;
   public linkingFeldStyle: any = {
     "text-valign": "center",
     "text-halign": "left",
@@ -49,6 +50,7 @@ export class AppComponent implements OnInit {
     var node_1 = null;
     var node_2 = null;
     var aux_node=null;
+    var dblTap = false;
 
     this.cy = cytoscape({
 
@@ -82,14 +84,35 @@ export class AppComponent implements OnInit {
         rows: 1
       },
     });
-
+    
     var setEdges = (node) => {
       if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
         if(node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent){
           if(node_1.parent()._private.data.id == this.nodeParent){
-            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } })
+            let color = this.colorEdge;
+            //console.log(node_1,node_1._private.style['background-color'].value,rgbToHex(color[0], color[1], color[2]));
+            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
+            this.cy.style().selector('#'+node_1._private.data.id + '_' + node).style({
+              'width': 3,
+              'line-color': color,
+              'target-arrow-color': color,
+              'target-arrow-shape': 'triangle',
+              "curve-style": "unbundled-bezier",
+              "control-point-distances": [5, -5],
+              "control-point-weights": [0.250, 0.75]
+            }).update();
           }else{
+            let color = node_2._private.style['background-color'].strValue;
             this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node, target: node_1._private.data.id } })
+            this.cy.style().selector('#'+node_1._private.data.id + '_' + node).style({
+              'width': 3,
+              'line-color': color,
+              'target-arrow-color': color,
+              'target-arrow-shape': 'triangle',
+              "curve-style": "unbundled-bezier",
+              "control-point-distances": [5, -5],
+              "control-point-weights": [0.250, 0.75]
+            }).update();
           }
         }
       }
@@ -101,6 +124,7 @@ export class AppComponent implements OnInit {
       if (this.nodeStyle.node == null) {
         this.nodeStyle.node = node.data.id;
         this.nodeStyle.backgroundStyle = { 'background-color': node.style['background-color'].strValue }
+        this.colorEdge = node.style['background-color'].strValue;
         this.cy.style().selector('#' + node.data.id).style({ 'background-color': 'black' }).update();
       } else {
         this.cy.style().selector('#' + this.nodeStyle.node).style(this.nodeStyle.backgroundStyle).update();
@@ -247,7 +271,19 @@ export class AppComponent implements OnInit {
     }
 
     this.cy.on('tap','edge',function(evt){
-      deleteEdgeOrNode(this);
+      let interval;
+      if(dblTap == false){
+        dblTap = true;
+        interval = setInterval(()=>{
+          if(dblTap == true){
+            dblTap = false;
+            clearInterval(interval);
+          }
+        },1000)
+      }else{
+        deleteEdgeOrNode(this);
+      }
+      //deleteEdgeOrNode(this);
     });
   }
 
