@@ -8,7 +8,7 @@ import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 })
 export class AppComponent implements OnInit {
   public cy: any;
-  public nodeId1: String = null;
+  public nodeParent: String = "Progress Items";
   public nodeStyle: any = {
     node: null,
     backgroundStyle: null
@@ -46,6 +46,10 @@ export class AppComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    var node_1 = null;
+    var node_2 = null;
+    var aux_node=null;
+
     this.cy = cytoscape({
 
       container: document.getElementById('cy'),
@@ -77,16 +81,20 @@ export class AppComponent implements OnInit {
         name: 'grid',
         rows: 1
       },
-      // autolock: true
     });
 
     var setEdges = (node) => {
-      if (this.nodeId1 == null) {
-        this.nodeId1 = node;
-      } else {
-        this.cy.add({ group: 'edges', data: { id: this.nodeId1 + '_' + node, source: this.nodeId1, target: node } })
-        this.nodeId1 = null;
+      if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
+        if(node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent){
+          if(node_1.parent()._private.data.id == this.nodeParent){
+            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } })
+          }else{
+            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node, target: node_1._private.data.id } })
+          }
+        }
       }
+      node_1 = null;
+      node_2 = null;
     }
 
     var selectNode = (node) => {
@@ -119,37 +127,64 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Weight', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 265 } },
         { group: 'nodes', data: { id: 'Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 280 } },
         { group: 'nodes', data: { id: 'PDS-L4-Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 295 } },
-        
-        {data: {id:'Progress Items'}, selected: false, selectable: false, locked: true, grabbable: false, pannable: false}, //Caja progress items
-        
-        { group: 'nodes', data: { id: 'Task_ID_k', label:'Task ID', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 135 } },
-        { group: 'nodes', data: { id: 'Name_k', label:'Name', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 150 } },
-        { group: 'nodes', data: { id: 'Description_k', label:'Description', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 165 } },
-        { group: 'nodes', data: { id: 'Start_Date', label:'Start Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 180 } },
-        { group: 'nodes', data: { id: 'Finish_Date', label:'Finish Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 195 } },
-        
-        {data: {id:'Schedule Task'}},//Caja schedule task
 
-        { group: 'nodes', data: { id: 'Weight_12k', label:'Weight', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 235 } },
-        { group: 'nodes', data: { id: 'Beschreibung_12k', label:'Beschreibung', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 250 } },
-        { group: 'nodes', data: { id: 'PDS-L1_12k', label:'PDS-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 265 } },
-        { group: 'nodes', data: { id: 'PDS-L2_12k', label:'PDS-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 280 } },
-        { group: 'nodes', data: { id: 'PDS-L3_12k', label:'PDS-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 295 } },
-        { group: 'nodes', data: { id: 'PDS-L4_12k', label:'PDS-L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 310 } },
-        { group: 'nodes', data: { id: 'L1_12k', label:'L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 325 } },
-        { group: 'nodes', data: { id: 'L2_12k', label:'L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 340 } },
-        { group: 'nodes', data: { id: 'L3_12k', label:'L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 355 } },
-        { group: 'nodes', data: { id: 'L4_12k', label:'L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 370 } },
-        { group: 'nodes', data: { id: 'Path_12k', label:'Path', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 385 } },
-        { group: 'nodes', data: { id: 'LOC-L1_12k', label:'LOC-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 400 } },
-        { group: 'nodes', data: { id: 'LOC-L2_12k', label:'LOC-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 415 } },
-        { group: 'nodes', data: { id: 'LOC-L3_12k', label:'LOC-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 430 } },
-        { group: 'nodes', data: { id: 'Task_ID_12k', label:'Task_ID', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 445 } },
-        { group: 'nodes', data: { id: 'Task_Name_12k', label:'Task_Name', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 460 } },
+        { data: { id: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }, //Caja progress items
 
-        {data: {id:'Excel Sheet: ActivityAssigment'}}//Caja Excel Sheet: ActivityAssigment
+        { group: 'nodes', data: { id: 'Task_ID_k', label: 'Task ID', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 135 } },
+        { group: 'nodes', data: { id: 'Name_k', label: 'Name', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 150 } },
+        { group: 'nodes', data: { id: 'Description_k', label: 'Description', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 165 } },
+        { group: 'nodes', data: { id: 'Start_Date', label: 'Start Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 180 } },
+        { group: 'nodes', data: { id: 'Finish_Date', label: 'Finish Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 195 } },
+
+        { data: { id: 'Schedule Task' } },//Caja schedule task
+
+        { group: 'nodes', data: { id: 'Weight_12k', label: 'Weight', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 235 } },
+        { group: 'nodes', data: { id: 'Beschreibung_12k', label: 'Beschreibung', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 250 } },
+        { group: 'nodes', data: { id: 'PDS-L1_12k', label: 'PDS-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 265 } },
+        { group: 'nodes', data: { id: 'PDS-L2_12k', label: 'PDS-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 280 } },
+        { group: 'nodes', data: { id: 'PDS-L3_12k', label: 'PDS-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 295 } },
+        { group: 'nodes', data: { id: 'PDS-L4_12k', label: 'PDS-L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 310 } },
+        { group: 'nodes', data: { id: 'L1_12k', label: 'L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 325 } },
+        { group: 'nodes', data: { id: 'L2_12k', label: 'L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 340 } },
+        { group: 'nodes', data: { id: 'L3_12k', label: 'L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 355 } },
+        { group: 'nodes', data: { id: 'L4_12k', label: 'L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 370 } },
+        { group: 'nodes', data: { id: 'Path_12k', label: 'Path', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 385 } },
+        { group: 'nodes', data: { id: 'LOC-L1_12k', label: 'LOC-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 400 } },
+        { group: 'nodes', data: { id: 'LOC-L2_12k', label: 'LOC-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 415 } },
+        { group: 'nodes', data: { id: 'LOC-L3_12k', label: 'LOC-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 430 } },
+        { group: 'nodes', data: { id: 'Task_ID_12k', label: 'Task_ID', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 445 } },
+        { group: 'nodes', data: { id: 'Task_Name_12k', label: 'Task_Name', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 460 } },
+
+        { data: { id: 'Excel Sheet: ActivityAssigment' } },//Caja Excel Sheet: ActivityAssigment
+
+        { group: 'nodes', data: { id: 'Beschrelbung_212k', label: 'Beschrelbung', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 310 } },
+        { group: 'nodes', data: { id: 'PDS-L1_212k', label: 'PDS-L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 325 } },
+        { group: 'nodes', data: { id: 'PDS-L2_212k', label: 'PDS-L2', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 340 } },
+        { group: 'nodes', data: { id: 'PDS-L3_212k', label: 'PDS-L3', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 355 } },
+        { group: 'nodes', data: { id: 'PDS-L4_212k', label: 'PDS-L4', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 370 } },
+        { group: 'nodes', data: { id: 'L1_212k', label: 'L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 385 } },
+        { group: 'nodes', data: { id: 'L2_212k', label: 'L2', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 400 } },
+        { group: 'nodes', data: { id: 'L3_212k', label: 'L3', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 415 } },
+        { group: 'nodes', data: { id: 'L4_212k', label: 'L4', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 430 } },
+        { group: 'nodes', data: { id: 'Path_212k', label: 'Path', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 445 } },
+        { group: 'nodes', data: { id: 'Order_212k', label: 'Order_Name', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 460 } },
+
+        { data: { id: 'Excel Sheet: MinPDSL4' } }//Caja Excel Sheet: MinPDSL4
       ]
     );
+
+    //Estilos Excel Sheet: MinPDSL4
+    this.cy.style().selector('#Beschrelbung_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#PDS-L1_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#PDS-L2_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#PDS-L3_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#PDS-L4_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#L1_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#L2_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#L3_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#L4_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#Path_212k').style(this.dataStyle).update();
+    this.cy.style().selector('#Order_212k').style(this.dataStyle).update();
 
     //Estilos Excel Sheet: ActivityAssigment
     this.cy.style().selector('#Weight_12k').style(this.dataStyle).update();
@@ -178,7 +213,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#LOC-L1').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#LOC-L2').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#LOC-L3').style(this.linkingFeldStyle).update();
-    
+
     //Estilo de los nodos Linking Field;
     this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Planned_Start').style(this.dataFieldStyle).update();
@@ -194,11 +229,29 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Start_Date').style(this.dataStyle).update();
     this.cy.style().selector('#Finish_Date').style(this.dataStyle).update();
 
+
     this.cy.nodes().on('click', function (e) {
-      let idNode = this._private.data.id;
-      //console.log(this._private); //Información del nodo al que se dio click.
-      setEdges(idNode);
-      selectNode(this._private);
+      if (!this.isParent()) {
+        if (node_1 == null) {
+          node_1 = this;
+        } else {
+          node_2 = this;
+          setEdges(node_2._private.data.id);
+        }
+        selectNode(this._private);
+      }
     });
+
+    var deleteEdgeOrNode = (e) => {
+      this.cy.remove(e);
+    }
+
+    this.cy.on('mousedown','edge',function(evt){
+      deleteEdgeOrNode(this);
+    });
+  }
+
+  getJson(){
+    console.log( this.cy.json() );
   }
 }
