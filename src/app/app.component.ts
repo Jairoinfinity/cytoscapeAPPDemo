@@ -49,7 +49,7 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     var node_1 = null;
     var node_2 = null;
-    var aux_node=null;
+    var aux_node = null;
     var dblTap = false;
 
     this.cy = cytoscape({
@@ -62,7 +62,7 @@ export class AppComponent implements OnInit {
           style: {
             'text-valign': 'top',
             'text-halign': 'center',
-            'label': 'data(id)'
+            'label': 'data(label)'
           }
         },
         {
@@ -84,14 +84,14 @@ export class AppComponent implements OnInit {
         rows: 1
       },
     });
-    
+
     var setEdges = (node) => {
       if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
-        if(node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent){
-          if(node_1.parent()._private.data.id == this.nodeParent){
+        if (node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent) {
+          if (node_1.parent()._private.data.id == this.nodeParent) {
             let color = this.colorEdge;
             this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
-            this.cy.style().selector('#'+node_1._private.data.id + '_' + node).style({
+            this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
               'width': 3,
               'line-color': color,
               'target-arrow-color': color,
@@ -100,10 +100,10 @@ export class AppComponent implements OnInit {
               "control-point-distances": [5, -5],
               "control-point-weights": [0.250, 0.75]
             }).update();
-          }else{
+          } else {
             let color = node_2._private.style['background-color'].strValue;
             this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node, target: node_1._private.data.id } })
-            this.cy.style().selector('#'+node_1._private.data.id + '_' + node).style({
+            this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
               'width': 3,
               'line-color': color,
               'target-arrow-color': color,
@@ -130,10 +130,9 @@ export class AppComponent implements OnInit {
         this.nodeStyle.node = null;
         this.nodeStyle.backgroundStyle = null
       }
-
     }
 
-    
+
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'Task_ID', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 100 } },
@@ -151,7 +150,7 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 400 } },
         { group: 'nodes', data: { id: 'PDS-L4-Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 425 } },
 
-        { data: { id: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }, //Caja progress items
+        { data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false },
 
         { group: 'nodes', data: { id: 'Task_ID_k', label: 'Task ID', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 135 } },
         { group: 'nodes', data: { id: 'Name_k', label: 'Name', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 160 } },
@@ -159,7 +158,7 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Start_Date', label: 'Start Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 210 } },
         { group: 'nodes', data: { id: 'Finish_Date', label: 'Finish Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 235 } },
 
-        { data: { id: 'Schedule Task' } },
+        { data: { id: 'Schedule Task', label: 'Schedule Task' } },
 
         { group: 'nodes', data: { id: 'Weight_12k', label: 'Weight', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 235 } },
         { group: 'nodes', data: { id: 'Beschreibung_12k', label: 'Beschreibung', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 260 } },
@@ -178,7 +177,7 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Task_ID_12k', label: 'Task_ID', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 585 } },
         { group: 'nodes', data: { id: 'Task_Name_12k', label: 'Task_Name', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 610 } },
 
-        { data: { id: 'Excel Sheet: ActivityAssigment' } },
+        { data: { id: 'Excel Sheet: ActivityAssigment', label: 'Excel Sheet: ActivityAssigment' } },
 
         { group: 'nodes', data: { id: 'Beschrelbung_212k', label: 'Beschrelbung', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 310 } },
         { group: 'nodes', data: { id: 'PDS-L1_212k', label: 'PDS-L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 335 } },
@@ -192,11 +191,21 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Path_212k', label: 'Path', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 535 } },
         { group: 'nodes', data: { id: 'Order_212k', label: 'Order_Name', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 560 } },
 
-        { data: { id: 'Excel Sheet: MinPDSL4' } }
+        { data: { id: 'Excel Sheet: MinPDSL4', label: 'Excel Sheet: MinPDSL4' } },
+
+        { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' },selected: false, grabbable: false, position: { x: 200, y: 30 } },
+        { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' },selected: false, grabbable: false, position: { x: 370, y: 30} },
+        { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' },selected: false, grabbable: false, position: { x: 600, y: 30} },
+        { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' },selected: false, grabbable: false, position: { x: 800, y: 30} },
+        { data: { id: 'addLinking', label: '', parent: 'Menu'}, selected: false, grabbable: false },
+        { data: { id: 'addData', label: '', parent: 'Menu'}, selected: false, grabbable: false },
+        { data: { id: 'getJson', label: '', parent: 'Menu'}, selected: false, grabbable: false },
+        { data: { id: 'upExcel', label: '', parent: 'Menu'}, selected: false, grabbable: false },
+        { data: { id: 'Menu', label: 'Menu'} }
       ]
     );
 
-    
+
     this.cy.style().selector('#Beschrelbung_212k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L1_212k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L2_212k').style(this.dataStyle).update();
@@ -209,7 +218,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Path_212k').style(this.dataStyle).update();
     this.cy.style().selector('#Order_212k').style(this.dataStyle).update();
 
-    
+
     this.cy.style().selector('#Weight_12k').style(this.dataStyle).update();
     this.cy.style().selector('#Beschreibung_12k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L1_12k').style(this.dataStyle).update();
@@ -227,7 +236,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Task_ID_12k').style(this.dataStyle).update();
     this.cy.style().selector('#Task_Name_12k').style(this.dataStyle).update();
 
-    
+
     this.cy.style().selector('#Task_ID').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
@@ -237,7 +246,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#LOC-L2').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#LOC-L3').style(this.linkingFeldStyle).update();
 
-    
+
     this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Planned_Start').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Planned_Finish').style(this.dataFieldStyle).update();
@@ -245,12 +254,64 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
     this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
 
-    
+
     this.cy.style().selector('#Task_ID_k').style(this.dataStyle).update();
     this.cy.style().selector('#Name_k').style(this.dataStyle).update();
     this.cy.style().selector('#Description_k').style(this.dataStyle).update();
     this.cy.style().selector('#Start_Date').style(this.dataStyle).update();
     this.cy.style().selector('#Finish_Date').style(this.dataStyle).update();
+
+    this.cy.style().selector('#addLinkingField').css({
+      'label': 'data(label)',
+      "text-valign": "center",
+      "text-halign": "right",
+      'background-color':'#eeeeee',
+      'background-image': './assets/ico/link.png',
+      "width": "20",
+      "height": "20",
+      "shape": "rectangle",
+      'background-fit': 'cover cover',
+      'background-image-opacity': 1
+    }).update();
+
+    this.cy.style().selector('#addDataField').css({
+      'label': 'data(label)',
+      "text-valign": "center",
+      "text-halign": "right",
+      'background-color':'#eeeeee',
+      'background-image': './assets/ico/data.png',
+      "width": "20",
+      "height": "20",
+      "shape": "rectangle",
+      'background-fit': 'cover cover',
+      'background-image-opacity': 1
+    }).update();
+
+    this.cy.style().selector('#getJsonData').css({
+      'label': 'data(label)',
+      "text-valign": "center",
+      "text-halign": "right",
+      'background-color':'#eeeeee',
+      'background-image': './assets/ico/json.png',
+      "width": "20",
+      "height": "20",
+      "shape": "rectangle",
+      'background-fit': 'cover cover',
+      'background-image-opacity': 1
+    }).update();
+
+    this.cy.style().selector('#uploadExcel').css({
+      'label': 'data(label)',
+      "text-valign": "center",
+      "text-halign": "right",
+      'background-color':'#eeeeee',
+      'background-image': './assets/ico/excel.png',
+      "width": "20",
+      "height": "20",
+      "shape": "rectangle",
+      'background-fit': 'cover cover',
+      'background-image-opacity': 1
+    }).update();
 
 
     this.cy.nodes().on('tap', function (e) {
@@ -269,23 +330,23 @@ export class AppComponent implements OnInit {
       this.cy.remove(e);
     }
 
-    this.cy.on('tap','edge',function(evt){
+    this.cy.on('tap', 'edge', function (evt) {
       let interval;
-      if(dblTap == false){
+      if (dblTap == false) {
         dblTap = true;
-        interval = setInterval(()=>{
-          if(dblTap == true){
+        interval = setInterval(() => {
+          if (dblTap == true) {
             dblTap = false;
             clearInterval(interval);
           }
-        },1000)
-      }else{
+        }, 1000)
+      } else {
         deleteEdgeOrNode(this);
       }
     });
   }
 
-  getJson(){
-    console.log( this.cy.json() );
+  getJson() {
+    console.log(this.cy.json());
   }
 }
