@@ -90,7 +90,6 @@ export class AppComponent implements OnInit {
         if(node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent){
           if(node_1.parent()._private.data.id == this.nodeParent){
             let color = this.colorEdge;
-            //console.log(node_1,node_1._private.style['background-color'].value,rgbToHex(color[0], color[1], color[2]));
             this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
             this.cy.style().selector('#'+node_1._private.data.id + '_' + node).style({
               'width': 3,
@@ -134,7 +133,7 @@ export class AppComponent implements OnInit {
 
     }
 
-    //Nodos de pruebas
+    
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'Task_ID', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 100 } },
@@ -160,7 +159,7 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Start_Date', label: 'Start Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 210 } },
         { group: 'nodes', data: { id: 'Finish_Date', label: 'Finish Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 235 } },
 
-        { data: { id: 'Schedule Task' } },//Caja schedule task
+        { data: { id: 'Schedule Task' } },
 
         { group: 'nodes', data: { id: 'Weight_12k', label: 'Weight', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 235 } },
         { group: 'nodes', data: { id: 'Beschreibung_12k', label: 'Beschreibung', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 260 } },
@@ -179,7 +178,7 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Task_ID_12k', label: 'Task_ID', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 585 } },
         { group: 'nodes', data: { id: 'Task_Name_12k', label: 'Task_Name', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 610 } },
 
-        { data: { id: 'Excel Sheet: ActivityAssigment' } },//Caja Excel Sheet: ActivityAssigment
+        { data: { id: 'Excel Sheet: ActivityAssigment' } },
 
         { group: 'nodes', data: { id: 'Beschrelbung_212k', label: 'Beschrelbung', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 310 } },
         { group: 'nodes', data: { id: 'PDS-L1_212k', label: 'PDS-L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 335 } },
@@ -193,11 +192,11 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'Path_212k', label: 'Path', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 535 } },
         { group: 'nodes', data: { id: 'Order_212k', label: 'Order_Name', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 560 } },
 
-        { data: { id: 'Excel Sheet: MinPDSL4' } }//Caja Excel Sheet: MinPDSL4
+        { data: { id: 'Excel Sheet: MinPDSL4' } }
       ]
     );
 
-    //Estilos Excel Sheet: MinPDSL4
+    
     this.cy.style().selector('#Beschrelbung_212k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L1_212k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L2_212k').style(this.dataStyle).update();
@@ -210,7 +209,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Path_212k').style(this.dataStyle).update();
     this.cy.style().selector('#Order_212k').style(this.dataStyle).update();
 
-    //Estilos Excel Sheet: ActivityAssigment
+    
     this.cy.style().selector('#Weight_12k').style(this.dataStyle).update();
     this.cy.style().selector('#Beschreibung_12k').style(this.dataStyle).update();
     this.cy.style().selector('#PDS-L1_12k').style(this.dataStyle).update();
@@ -228,7 +227,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Task_ID_12k').style(this.dataStyle).update();
     this.cy.style().selector('#Task_Name_12k').style(this.dataStyle).update();
 
-    //Estilo de los nodos Linking Field;
+    
     this.cy.style().selector('#Task_ID').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
@@ -238,7 +237,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#LOC-L2').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#LOC-L3').style(this.linkingFeldStyle).update();
 
-    //Estilo de los nodos Linking Field;
+    
     this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Planned_Start').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Planned_Finish').style(this.dataFieldStyle).update();
@@ -246,7 +245,7 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
     this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
 
-    //Estilos Schedule Task
+    
     this.cy.style().selector('#Task_ID_k').style(this.dataStyle).update();
     this.cy.style().selector('#Name_k').style(this.dataStyle).update();
     this.cy.style().selector('#Description_k').style(this.dataStyle).update();
@@ -283,7 +282,6 @@ export class AppComponent implements OnInit {
       }else{
         deleteEdgeOrNode(this);
       }
-      //deleteEdgeOrNode(this);
     });
   }
 
