@@ -8,5 +8,5 @@
     <label for="linkingValue">Linking Field</label>
     <input [(ngModel)]="linkingFieldText" type="text" class="form-control" id="linkingValue">
     <br>
-    <button (click)="setLinkingField()" class="btn btn-primary">Submit</button>
+    <button [disabled]="linkingFieldText == null || linkingFieldText == ''" (click)="setLinkingField()" class="btn btn-primary">Submit</button>
 </div>

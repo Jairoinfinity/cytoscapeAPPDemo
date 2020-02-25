@@ -3,7 +3,9 @@ import cytoscape from 'cytoscape';
 import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
+import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 import { LinkingService } from './services/linkingservice.service';
+import { DataFieldService } from './services/data-field.service';
 
 @Component({
   selector: 'app-root',
@@ -49,10 +51,12 @@ export class AppComponent implements OnInit {
   }
 
   public linkingData;
+  public dataField;
 
   constructor(
     private modalService: NgbModal,
-    public linkingService: LinkingService
+    public linkingService: LinkingService,
+    public dataFieldService: DataFieldService
   ) { }
 
   ngOnInit() {
@@ -62,7 +66,10 @@ export class AppComponent implements OnInit {
     var dblTap = false;
     this.linkingService.statusFile.subscribe(data => {
       this.linkingData = data;
-      //alert(data);
+    })
+
+    this.dataFieldService.statusFile.subscribe(data => {
+      this.dataField = data;
     })
 
     this.cy = cytoscape({
@@ -359,7 +366,11 @@ export class AppComponent implements OnInit {
     });
 
     this.cy.on('tap', '#addLinking', () => {
-      const modalRef = this.modalService.open(ModalLinkingFieldComponent);
+      let modalRef = this.modalService.open(ModalLinkingFieldComponent);
+    })
+
+    this.cy.on('tap', '#addData', () => {
+      let modalRef = this.modalService.open(ModalDataFieldComponent);
     })
 
     var dataJSON = () => {
