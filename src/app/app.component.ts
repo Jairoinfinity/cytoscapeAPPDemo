@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import cytoscape from 'cytoscape';
 import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
+import { LinkingService } from './services/linkingservice.service';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -44,13 +48,22 @@ export class AppComponent implements OnInit {
     "height": "10"
   }
 
-  constructor() { }
+  public linkingData;
+
+  constructor(
+    private modalService: NgbModal,
+    public linkingService: LinkingService
+  ) { }
 
   ngOnInit() {
     var node_1 = null;
     var node_2 = null;
     var aux_node = null;
     var dblTap = false;
+    this.linkingService.statusFile.subscribe(data => {
+      this.linkingData = data;
+      //alert(data);
+    })
 
     this.cy = cytoscape({
 
@@ -344,9 +357,17 @@ export class AppComponent implements OnInit {
         deleteEdgeOrNode(this);
       }
     });
-  }
 
-  getJson() {
-    console.log(this.cy.json());
+    this.cy.on('tap', '#addLinking', () => {
+      const modalRef = this.modalService.open(ModalLinkingFieldComponent);
+    })
+
+    var dataJSON = () => {
+      return this.cy.json();
+    }
+
+    this.cy.on('tap', '#getJson', function(){
+      console.log(dataJSON());
+    })
   }
 }

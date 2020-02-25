@@ -1,0 +1,12 @@
+<div class="modal-header">
+    <h4 class="modal-title">Add Linking Field</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<div class="modal-body">
+    <label for="linkingValue">Linking Field</label>
+    <input [(ngModel)]="linkingFieldText" type="text" class="form-control" id="linkingValue">
+    <br>
+    <button (click)="setLinkingField()" class="btn btn-primary">Submit</button>
+</div>
