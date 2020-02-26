@@ -4,11 +4,13 @@ import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
 import { AppComponent } from './app.component';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
 import { FormsModule } from '@angular/forms';
+import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    ModalLinkingFieldComponent
+    ModalLinkingFieldComponent,
+    ModalDataFieldComponent
   ],
   imports: [
     BrowserModule,
@@ -17,7 +19,10 @@ import { FormsModule } from '@angular/forms';
   ],
   providers: [],
   bootstrap: [AppComponent],
-  entryComponents: [ModalLinkingFieldComponent]
+  entryComponents: [
+    ModalLinkingFieldComponent,
+    ModalDataFieldComponent
+  ]
 
 })
 export class AppModule { }

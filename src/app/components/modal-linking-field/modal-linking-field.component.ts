@@ -20,6 +20,9 @@ export class ModalLinkingFieldComponent implements OnInit {
   ngOnInit() {
   }
   setLinkingField(){
-    this.linkingService.changes(this.linkingFieldText);
+    if(this.linkingFieldText != null && this.linkingFieldText != ""){
+      this.linkingService.changes(this.linkingFieldText);
+      this.activeModal.dismiss('Cross click');
+    }
   }
 }

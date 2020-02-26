@@ -3,7 +3,9 @@ import cytoscape from 'cytoscape';
 import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
+import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 import { LinkingService } from './services/linkingservice.service';
+import { DataFieldService } from './services/data-field.service';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +23,7 @@ export class AppComponent implements OnInit {
   public linkingFeldStyle: any = {
     "text-valign": "center",
     "text-halign": "left",
-    'label': 'data(id)',
+    'label': 'data(label)',
     'background-color': '#4287f5',
     "shape": "tag",
     "width": "10",
@@ -29,7 +31,7 @@ export class AppComponent implements OnInit {
   }
 
   public dataFieldStyle: any = {
-    'label': 'data(id)',
+    'label': 'data(label)',
     "text-valign": "center",
     "text-halign": "left",
     'background-color': '#32a836',
@@ -49,10 +51,12 @@ export class AppComponent implements OnInit {
   }
 
   public linkingData;
+  public dataField;
 
   constructor(
     private modalService: NgbModal,
-    public linkingService: LinkingService
+    public linkingService: LinkingService,
+    public dataFieldService: DataFieldService
   ) { }
 
   ngOnInit() {
@@ -60,9 +64,75 @@ export class AppComponent implements OnInit {
     var node_2 = null;
     var aux_node = null;
     var dblTap = false;
+
     this.linkingService.statusFile.subscribe(data => {
       this.linkingData = data;
-      //alert(data);
+      let json = this.getDataJson();
+      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
+      let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
+      let positionY = 100;
+      let lastNode;
+      let idLink = this.getRandomId();
+      if(nodosLikns.length > 0){
+        lastNode = nodosLikns[nodosLikns.length - 1];
+        positionY = (lastNode.position.y + 25);
+      }
+
+      this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
+      this.cy.style().selector('#'+idLink).style(this.linkingFeldStyle).update();
+
+      if(nodosData.length > 0){
+        nodosData.forEach(e => {
+          let data = e;
+          this.cy.remove('#'+e.data.id);
+          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25)} }]);
+          this.cy.style().selector('#'+e.data.id).style(this.dataFieldStyle).update();
+        });
+      }
+
+      this.cy.on('tap', '#'+idLink, function (e) {
+        if (!this.isParent()) {
+          if (node_1 == null) {
+            node_1 = this;
+          } else {
+            node_2 = this;
+            setEdges(node_2._private.data.id);
+          }
+          selectNode(this._private);
+        }
+      });
+    })
+
+    this.dataFieldService.statusFile.subscribe(data => {
+      this.dataField = data;
+      let json = this.getDataJson();
+      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
+      let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
+      let lastNode;
+      let positionY = 100;
+      let idData = this.getRandomId();
+      if(nodosData.length > 0){
+        lastNode = nodosData[nodosData.length - 1];
+        positionY = (lastNode.position.y + 25);
+      }else if(nodosLikns.length > 0){
+        lastNode = nodosLikns[nodosLikns.length - 1];
+        positionY = (lastNode.position.y + 25);
+      }
+
+      this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: positionY} }]);
+      this.cy.style().selector('#'+idData).style(this.dataFieldStyle).update();
+
+      this.cy.nodes().on('tap', '#'+idData, function (e) {
+        if (!this.isParent()) {
+          if (node_1 == null) {
+            node_1 = this;
+          } else {
+            node_2 = this;
+            setEdges(node_2._private.data.id);
+          }
+          selectNode(this._private);
+        }
+      });
     })
 
     this.cy = cytoscape({
@@ -96,6 +166,7 @@ export class AppComponent implements OnInit {
         name: 'grid',
         rows: 1
       },
+      pan: { x: 200, y: 50 }
     });
 
     var setEdges = (node) => {
@@ -148,20 +219,20 @@ export class AppComponent implements OnInit {
 
     this.cy.add(
       [
-        { group: 'nodes', data: { id: 'Task_ID', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 100 } },
-        { group: 'nodes', data: { id: 'PDS-L1', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 125 } },
-        { group: 'nodes', data: { id: 'PDS-L2', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 150 } },
-        { group: 'nodes', data: { id: 'PDS-L3', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 175 } },
-        { group: 'nodes', data: { id: 'PDS-L4', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 200 } },
-        { group: 'nodes', data: { id: 'LOC-L1', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 225 } },
-        { group: 'nodes', data: { id: 'LOC-L2', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 250 } },
-        { group: 'nodes', data: { id: 'LOC-L3', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 275 } },
-        { group: 'nodes', data: { id: 'Name', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 300 } },
-        { group: 'nodes', data: { id: 'Planned_Start', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 325 } },
-        { group: 'nodes', data: { id: 'Planned_Finish', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 350 } },
-        { group: 'nodes', data: { id: 'Weight', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 375 } },
-        { group: 'nodes', data: { id: 'Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 400 } },
-        { group: 'nodes', data: { id: 'PDS-L4-Description', parent: 'Progress Items' }, grabbable: false, position: { x: 100, y: 425 } },
+        // { group: 'nodes', data: { id: 'Task_ID', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 100 } },
+        // { group: 'nodes', data: { id: 'PDS-L1', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 125 } },
+        // { group: 'nodes', data: { id: 'PDS-L2', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 150 } },
+        // { group: 'nodes', data: { id: 'PDS-L3', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 175 } },
+        // { group: 'nodes', data: { id: 'PDS-L4', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 200 } },
+        // { group: 'nodes', data: { id: 'LOC-L1', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 225 } },
+        // { group: 'nodes', data: { id: 'LOC-L2', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 250 } },
+        // { group: 'nodes', data: { id: 'LOC-L3', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 275 } },
+        // { group: 'nodes', data: { id: 'Name', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 300 } },
+        // { group: 'nodes', data: { id: 'Planned_Start', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 325 } },
+        // { group: 'nodes', data: { id: 'Planned_Finish', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 350 } },
+        // { group: 'nodes', data: { id: 'Weight', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 375 } },
+        // { group: 'nodes', data: { id: 'Description', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 400 } },
+        // { group: 'nodes', data: { id: 'PDS-L4-Description', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 425 } },
 
         { data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false },
 
@@ -359,7 +430,11 @@ export class AppComponent implements OnInit {
     });
 
     this.cy.on('tap', '#addLinking', () => {
-      const modalRef = this.modalService.open(ModalLinkingFieldComponent);
+      let modalRef = this.modalService.open(ModalLinkingFieldComponent);
+    })
+
+    this.cy.on('tap', '#addData', () => {
+      let modalRef = this.modalService.open(ModalDataFieldComponent);
     })
 
     var dataJSON = () => {
@@ -369,5 +444,20 @@ export class AppComponent implements OnInit {
     this.cy.on('tap', '#getJson', function(){
       console.log(dataJSON());
     })
+
+    this.getDataJson();
+  }
+
+  getDataJson(){
+    return this.cy.json();
+  }
+
+  getRandomId(){
+    let chars = "qwertyuiopasdfghjklcvbnmQWERTYUIOPASDFGHJKLXCVBNM1234567890"
+    let id = "";
+    for(let i = 0; i < 10; i++){
+      id += chars.charAt(Math.floor(Math.random()* 58));
+    }
+    return id;
   }
 }
