@@ -72,7 +72,7 @@ export class AppComponent implements OnInit {
       let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
       let positionY = 100;
       let lastNode;
-      let idLink = data+"-"+this.getRandomId();
+      let idLink = this.getRandomId();
       if(nodosLikns.length > 0){
         lastNode = nodosLikns[nodosLikns.length - 1];
         positionY = (lastNode.position.y + 25);
@@ -90,7 +90,17 @@ export class AppComponent implements OnInit {
         });
       }
 
-      console.log(this.getDataJson());
+      this.cy.on('tap', '#'+idLink, function (e) {
+        if (!this.isParent()) {
+          if (node_1 == null) {
+            node_1 = this;
+          } else {
+            node_2 = this;
+            setEdges(node_2._private.data.id);
+          }
+          selectNode(this._private);
+        }
+      });
     })
 
     this.dataFieldService.statusFile.subscribe(data => {
@@ -100,7 +110,7 @@ export class AppComponent implements OnInit {
       let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
       let lastNode;
       let positionY = 100;
-      let idData = data+"-"+this.getRandomId();
+      let idData = this.getRandomId();
       if(nodosData.length > 0){
         lastNode = nodosData[nodosData.length - 1];
         positionY = (lastNode.position.y + 25);
@@ -111,6 +121,18 @@ export class AppComponent implements OnInit {
 
       this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: positionY} }]);
       this.cy.style().selector('#'+idData).style(this.dataFieldStyle).update();
+
+      this.cy.nodes().on('tap', '#'+idData, function (e) {
+        if (!this.isParent()) {
+          if (node_1 == null) {
+            node_1 = this;
+          } else {
+            node_2 = this;
+            setEdges(node_2._private.data.id);
+          }
+          selectNode(this._private);
+        }
+      });
     })
 
     this.cy = cytoscape({
@@ -433,7 +455,7 @@ export class AppComponent implements OnInit {
   getRandomId(){
     let chars = "qwertyuiopasdfghjklcvbnmQWERTYUIOPASDFGHJKLXCVBNM1234567890"
     let id = "";
-    for(let i = 0; i < 5; i++){
+    for(let i = 0; i < 10; i++){
       id += chars.charAt(Math.floor(Math.random()* 58));
     }
     return id;
