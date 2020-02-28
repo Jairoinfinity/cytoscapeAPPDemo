@@ -4,8 +4,13 @@ import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
+import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
 import { LinkingService } from './services/linkingservice.service';
 import { DataFieldService } from './services/data-field.service';
+import { UploadExcelService } from './services/upload-excel.service';
+import * as XLSX from 'xlsx';
+
+type AOA = any[][];
 
 @Component({
   selector: 'app-root',
@@ -13,6 +18,7 @@ import { DataFieldService } from './services/data-field.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  data: AOA = [[1, 2], [3, 4]];
   public cy: any;
   public nodeParent: String = "Progress Items";
   public nodeStyle: any = {
@@ -56,7 +62,8 @@ export class AppComponent implements OnInit {
   constructor(
     private modalService: NgbModal,
     public linkingService: LinkingService,
-    public dataFieldService: DataFieldService
+    public dataFieldService: DataFieldService,
+    public uploadExcelService: UploadExcelService
   ) { }
 
   ngOnInit() {
@@ -65,32 +72,81 @@ export class AppComponent implements OnInit {
     var aux_node = null;
     var dblTap = false;
 
+    this.uploadExcelService.statusFile.subscribe(target => {
+      if (target.files.length !== 1) throw new Error('Cannot use multiple files');
+      const reader: FileReader = new FileReader();
+      reader.onload = (e: any) => {
+        const bstr: string = e.target.result;
+        const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+        var s = 0;
+        let positionX = 400;
+        wb.SheetNames.forEach(wsname => {
+          const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+          let idParent = this.getRandomId();
+          let positionY = 100;
+          
+          this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+          
+          let dataFilter = this.data.filter(d => d.length > 0);
+
+          this.cy.add([{ data: { id: idParent, label: 'Excel Sheet: ' + wsname } }]);
+          for (var i = 0; i < dataFilter[0].length; i++) {
+            let idData = this.getRandomId();
+            this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent }, grabbable: false, position: { x: positionX, y: positionY } }]);
+            this.cy.style().selector('#' + idData).style(this.dataStyle).update();
+            this.cy.on('tap', '#' + idData, function (e) {
+              if (!this.isParent()) {
+                if (node_1 == null) {
+                  node_1 = this;
+                } else {
+                  node_2 = this;
+                  setEdges(node_2._private.data.id);
+                }
+                selectNode(this._private);
+              }
+            });
+            positionY += 25;
+          }
+          positionX += 300;
+        });
+
+      };
+      reader.readAsBinaryString(target.files[0]);
+    })
+
     this.linkingService.statusFile.subscribe(data => {
       this.linkingData = data;
       let json = this.getDataJson();
+      let parentNode = json.elements.nodes.filter(n => n.data.id == "Progress Items");
       let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
       let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
       let positionY = 100;
       let lastNode;
       let idLink = this.getRandomId();
-      if(nodosLikns.length > 0){
+
+      if (parentNode.length == 0) {
+        this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
+      }
+
+      if (nodosLikns.length > 0) {
         lastNode = nodosLikns[nodosLikns.length - 1];
         positionY = (lastNode.position.y + 25);
       }
 
-      this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
-      this.cy.style().selector('#'+idLink).style(this.linkingFeldStyle).update();
+      this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
+      this.cy.style().selector('#' + idLink).style(this.linkingFeldStyle).update();
 
-      if(nodosData.length > 0){
+      if (nodosData.length > 0) {
         nodosData.forEach(e => {
           let data = e;
-          this.cy.remove('#'+e.data.id);
-          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25)} }]);
-          this.cy.style().selector('#'+e.data.id).style(this.dataFieldStyle).update();
+          this.cy.remove('#' + e.data.id);
+          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25) } }]);
+          this.cy.style().selector('#' + e.data.id).style(this.dataFieldStyle).update();
         });
       }
 
-      this.cy.on('tap', '#'+idLink, function (e) {
+      this.cy.on('tap', '#' + idLink, function (e) {
         if (!this.isParent()) {
           if (node_1 == null) {
             node_1 = this;
@@ -106,23 +162,29 @@ export class AppComponent implements OnInit {
     this.dataFieldService.statusFile.subscribe(data => {
       this.dataField = data;
       let json = this.getDataJson();
+      let parentNode = json.elements.nodes.filter(n => n.data.id == "Progress Items");
       let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
       let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
       let lastNode;
       let positionY = 100;
       let idData = this.getRandomId();
-      if(nodosData.length > 0){
+
+      if (parentNode.length == 0) {
+        this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
+      }
+
+      if (nodosData.length > 0) {
         lastNode = nodosData[nodosData.length - 1];
         positionY = (lastNode.position.y + 25);
-      }else if(nodosLikns.length > 0){
+      } else if (nodosLikns.length > 0) {
         lastNode = nodosLikns[nodosLikns.length - 1];
         positionY = (lastNode.position.y + 25);
       }
 
-      this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: positionY} }]);
-      this.cy.style().selector('#'+idData).style(this.dataFieldStyle).update();
+      this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: positionY } }]);
+      this.cy.style().selector('#' + idData).style(this.dataFieldStyle).update();
 
-      this.cy.nodes().on('tap', '#'+idData, function (e) {
+      this.cy.nodes().on('tap', '#' + idData, function (e) {
         if (!this.isParent()) {
           if (node_1 == null) {
             node_1 = this;
@@ -219,107 +281,35 @@ export class AppComponent implements OnInit {
 
     this.cy.add(
       [
-        // { group: 'nodes', data: { id: 'Task_ID', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 100 } },
-        // { group: 'nodes', data: { id: 'PDS-L1', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 125 } },
-        // { group: 'nodes', data: { id: 'PDS-L2', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 150 } },
-        // { group: 'nodes', data: { id: 'PDS-L3', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 175 } },
-        // { group: 'nodes', data: { id: 'PDS-L4', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 200 } },
-        // { group: 'nodes', data: { id: 'LOC-L1', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 225 } },
-        // { group: 'nodes', data: { id: 'LOC-L2', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 250 } },
-        // { group: 'nodes', data: { id: 'LOC-L3', parent: 'Progress Items', rol:'Link' }, grabbable: false, position: { x: 100, y: 275 } },
-        // { group: 'nodes', data: { id: 'Name', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 300 } },
-        // { group: 'nodes', data: { id: 'Planned_Start', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 325 } },
-        // { group: 'nodes', data: { id: 'Planned_Finish', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 350 } },
-        // { group: 'nodes', data: { id: 'Weight', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 375 } },
-        // { group: 'nodes', data: { id: 'Description', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 400 } },
-        // { group: 'nodes', data: { id: 'PDS-L4-Description', parent: 'Progress Items', rol:'Data' }, grabbable: false, position: { x: 100, y: 425 } },
+        { group: 'nodes', data: { id: 'Task_ID', label: 'Task ID', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 100 } },
+        { group: 'nodes', data: { id: 'PDS-L1', label: 'PDS-L1', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 125 } },
+        { group: 'nodes', data: { id: 'PDS-L2', label: 'PDS-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 150 } },
+        { group: 'nodes', data: { id: 'PDS-L3', label: 'PDS-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 175 } },
+        { group: 'nodes', data: { id: 'PDS-L4', label: 'PDS-L4', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 200 } },
+        { group: 'nodes', data: { id: 'LOC-L1', label: 'LOC-L1', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 225 } },
+        { group: 'nodes', data: { id: 'LOC-L2', label: 'LOC-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 250 } },
+        { group: 'nodes', data: { id: 'LOC-L3', label: 'LOC-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 275 } },
+        { group: 'nodes', data: { id: 'Name', label: 'Name', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 300 } },
+        { group: 'nodes', data: { id: 'Planned_Start', label: 'Planned Start', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 325 } },
+        { group: 'nodes', data: { id: 'Planned_Finish', label: 'Planned Finish', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 350 } },
+        { group: 'nodes', data: { id: 'Weight', label: 'Weight', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 375 } },
+        { group: 'nodes', data: { id: 'Description', label: 'Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 400 } },
+        { group: 'nodes', data: { id: 'PDS-L4-Description', label: 'PDS-L4 Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 425 } },
 
         { data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false },
 
-        { group: 'nodes', data: { id: 'Task_ID_k', label: 'Task ID', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 135 } },
-        { group: 'nodes', data: { id: 'Name_k', label: 'Name', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 160 } },
-        { group: 'nodes', data: { id: 'Description_k', label: 'Description', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 185 } },
-        { group: 'nodes', data: { id: 'Start_Date', label: 'Start Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 210 } },
-        { group: 'nodes', data: { id: 'Finish_Date', label: 'Finish Date', parent: 'Schedule Task' }, grabbable: false, position: { x: 500, y: 235 } },
 
-        { data: { id: 'Schedule Task', label: 'Schedule Task' } },
-
-        { group: 'nodes', data: { id: 'Weight_12k', label: 'Weight', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 235 } },
-        { group: 'nodes', data: { id: 'Beschreibung_12k', label: 'Beschreibung', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 260 } },
-        { group: 'nodes', data: { id: 'PDS-L1_12k', label: 'PDS-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 285 } },
-        { group: 'nodes', data: { id: 'PDS-L2_12k', label: 'PDS-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 310 } },
-        { group: 'nodes', data: { id: 'PDS-L3_12k', label: 'PDS-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 335 } },
-        { group: 'nodes', data: { id: 'PDS-L4_12k', label: 'PDS-L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 360 } },
-        { group: 'nodes', data: { id: 'L1_12k', label: 'L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 385 } },
-        { group: 'nodes', data: { id: 'L2_12k', label: 'L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 410 } },
-        { group: 'nodes', data: { id: 'L3_12k', label: 'L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 435 } },
-        { group: 'nodes', data: { id: 'L4_12k', label: 'L4', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 460 } },
-        { group: 'nodes', data: { id: 'Path_12k', label: 'Path', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 485 } },
-        { group: 'nodes', data: { id: 'LOC-L1_12k', label: 'LOC-L1', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 510 } },
-        { group: 'nodes', data: { id: 'LOC-L2_12k', label: 'LOC-L2', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 535 } },
-        { group: 'nodes', data: { id: 'LOC-L3_12k', label: 'LOC-L3', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 560 } },
-        { group: 'nodes', data: { id: 'Task_ID_12k', label: 'Task_ID', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 585 } },
-        { group: 'nodes', data: { id: 'Task_Name_12k', label: 'Task_Name', parent: 'Excel Sheet: ActivityAssigment' }, grabbable: false, position: { x: 700, y: 610 } },
-
-        { data: { id: 'Excel Sheet: ActivityAssigment', label: 'Excel Sheet: ActivityAssigment' } },
-
-        { group: 'nodes', data: { id: 'Beschrelbung_212k', label: 'Beschrelbung', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 310 } },
-        { group: 'nodes', data: { id: 'PDS-L1_212k', label: 'PDS-L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 335 } },
-        { group: 'nodes', data: { id: 'PDS-L2_212k', label: 'PDS-L2', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 360 } },
-        { group: 'nodes', data: { id: 'PDS-L3_212k', label: 'PDS-L3', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 385 } },
-        { group: 'nodes', data: { id: 'PDS-L4_212k', label: 'PDS-L4', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 410 } },
-        { group: 'nodes', data: { id: 'L1_212k', label: 'L1', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 435 } },
-        { group: 'nodes', data: { id: 'L2_212k', label: 'L2', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 460 } },
-        { group: 'nodes', data: { id: 'L3_212k', label: 'L3', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 485 } },
-        { group: 'nodes', data: { id: 'L4_212k', label: 'L4', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 510 } },
-        { group: 'nodes', data: { id: 'Path_212k', label: 'Path', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 535 } },
-        { group: 'nodes', data: { id: 'Order_212k', label: 'Order_Name', parent: 'Excel Sheet: MinPDSL4' }, grabbable: false, position: { x: 300, y: 560 } },
-
-        { data: { id: 'Excel Sheet: MinPDSL4', label: 'Excel Sheet: MinPDSL4' } },
-
-        { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' },selected: false, grabbable: false, position: { x: 200, y: 30 } },
-        { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' },selected: false, grabbable: false, position: { x: 370, y: 30} },
-        { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' },selected: false, grabbable: false, position: { x: 600, y: 30} },
-        { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' },selected: false, grabbable: false, position: { x: 800, y: 30} },
-        { data: { id: 'addLinking', label: '', parent: 'Menu'}, selected: false, grabbable: false },
-        { data: { id: 'addData', label: '', parent: 'Menu'}, selected: false, grabbable: false },
-        { data: { id: 'getJson', label: '', parent: 'Menu'}, selected: false, grabbable: false },
-        { data: { id: 'upExcel', label: '', parent: 'Menu'}, selected: false, grabbable: false },
-        { data: { id: 'Menu', label: 'Menu'} }
+        { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 200, y: 30 } },
+        { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 370, y: 30 } },
+        { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' }, selected: false, grabbable: false, position: { x: 600, y: 30 } },
+        { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 800, y: 30 } },
+        { data: { id: 'addLinking', label: '', parent: 'Menu' }, selected: false, grabbable: false },
+        { data: { id: 'addData', label: '', parent: 'Menu' }, selected: false, grabbable: false },
+        { data: { id: 'getJson', label: '', parent: 'Menu' }, selected: false, grabbable: false },
+        { data: { id: 'upExcel', label: '', parent: 'Menu' }, selected: false, grabbable: false },
+        { data: { id: 'Menu', label: 'Menu' } }
       ]
     );
-
-
-    this.cy.style().selector('#Beschrelbung_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L1_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L2_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L3_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L4_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#L1_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#L2_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#L3_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#L4_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#Path_212k').style(this.dataStyle).update();
-    this.cy.style().selector('#Order_212k').style(this.dataStyle).update();
-
-
-    this.cy.style().selector('#Weight_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#Beschreibung_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L1_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L2_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L3_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#PDS-L4_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#L1_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#L2_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#L3_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#L4_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#Path_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#LOC-L1_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#LOC-L2_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#LOC-L3_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#Task_ID_12k').style(this.dataStyle).update();
-    this.cy.style().selector('#Task_Name_12k').style(this.dataStyle).update();
-
 
     this.cy.style().selector('#Task_ID').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
@@ -338,18 +328,11 @@ export class AppComponent implements OnInit {
     this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
     this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
 
-
-    this.cy.style().selector('#Task_ID_k').style(this.dataStyle).update();
-    this.cy.style().selector('#Name_k').style(this.dataStyle).update();
-    this.cy.style().selector('#Description_k').style(this.dataStyle).update();
-    this.cy.style().selector('#Start_Date').style(this.dataStyle).update();
-    this.cy.style().selector('#Finish_Date').style(this.dataStyle).update();
-
     this.cy.style().selector('#addLinkingField').css({
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color':'#eeeeee',
+      'background-color': '#eeeeee',
       'background-image': './assets/ico/link.png',
       "width": "20",
       "height": "20",
@@ -362,7 +345,7 @@ export class AppComponent implements OnInit {
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color':'#eeeeee',
+      'background-color': '#eeeeee',
       'background-image': './assets/ico/data.png',
       "width": "20",
       "height": "20",
@@ -375,7 +358,7 @@ export class AppComponent implements OnInit {
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color':'#eeeeee',
+      'background-color': '#eeeeee',
       'background-image': './assets/ico/json.png',
       "width": "20",
       "height": "20",
@@ -388,7 +371,7 @@ export class AppComponent implements OnInit {
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color':'#eeeeee',
+      'background-color': '#eeeeee',
       'background-image': './assets/ico/excel.png',
       "width": "20",
       "height": "20",
@@ -437,26 +420,30 @@ export class AppComponent implements OnInit {
       let modalRef = this.modalService.open(ModalDataFieldComponent);
     })
 
+    this.cy.on('tap', '#upExcel', () => {
+      let modalRef = this.modalService.open(ModalUploadExcelComponent);
+    })
+
     var dataJSON = () => {
       return this.cy.json();
     }
 
-    this.cy.on('tap', '#getJson', function(){
+    this.cy.on('tap', '#getJson', function () {
       console.log(dataJSON());
     })
 
     this.getDataJson();
   }
 
-  getDataJson(){
+  getDataJson() {
     return this.cy.json();
   }
 
-  getRandomId(){
+  getRandomId() {
     let chars = "qwertyuiopasdfghjklcvbnmQWERTYUIOPASDFGHJKLXCVBNM1234567890"
     let id = "";
-    for(let i = 0; i < 10; i++){
-      id += chars.charAt(Math.floor(Math.random()* 58));
+    for (let i = 0; i < 10; i++) {
+      id += chars.charAt(Math.floor(Math.random() * 58));
     }
     return id;
   }
