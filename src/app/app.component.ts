@@ -33,7 +33,8 @@ export class AppComponent implements OnInit {
     'background-color': '#4287f5',
     "shape": "tag",
     "width": "10",
-    "height": "10"
+    "height": "10",
+    'text-margin-x': -5
   }
 
   public dataFieldStyle: any = {
@@ -43,7 +44,8 @@ export class AppComponent implements OnInit {
     'background-color': '#32a836',
     "shape": "tag",
     "width": "10",
-    "height": "10"
+    "height": "10",
+    'text-margin-x': -5
   }
 
   public dataStyle: any = {
@@ -53,7 +55,8 @@ export class AppComponent implements OnInit {
     'background-color': '#c2beb2',
     "shape": "round-tag",
     "width": "10",
-    "height": "10"
+    "height": "10",
+    'text-margin-x': 5
   }
 
   public linkingData;
@@ -79,15 +82,15 @@ export class AppComponent implements OnInit {
         const bstr: string = e.target.result;
         const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
         var s = 0;
-        let positionX = 400;
+        let positionX = 200;
         wb.SheetNames.forEach(wsname => {
           const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
           let idParent = this.getRandomId();
           let positionY = 100;
-          
+
           this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
-          
+
           let dataFilter = this.data.filter(d => d.length > 0);
 
           this.cy.add([{ data: { id: idParent, label: 'Excel Sheet: ' + wsname } }]);
@@ -207,7 +210,10 @@ export class AppComponent implements OnInit {
           style: {
             'text-valign': 'top',
             'text-halign': 'center',
-            'label': 'data(label)'
+            'label': 'data(label)',
+            'background-color': 'white',
+            'font-weight': 'bold',
+            'shape': 'roundrectangle'
           }
         },
         {
@@ -300,9 +306,9 @@ export class AppComponent implements OnInit {
 
 
         { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 200, y: 30 } },
-        { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 370, y: 30 } },
+        { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 375, y: 30 } },
         { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' }, selected: false, grabbable: false, position: { x: 600, y: 30 } },
-        { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 800, y: 30 } },
+        { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 805, y: 30 } },
         { data: { id: 'addLinking', label: '', parent: 'Menu' }, selected: false, grabbable: false },
         { data: { id: 'addData', label: '', parent: 'Menu' }, selected: false, grabbable: false },
         { data: { id: 'getJson', label: '', parent: 'Menu' }, selected: false, grabbable: false },
@@ -332,52 +338,56 @@ export class AppComponent implements OnInit {
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color': '#eeeeee',
+      'background-color': 'white',
       'background-image': './assets/ico/link.png',
       "width": "20",
       "height": "20",
       "shape": "rectangle",
       'background-fit': 'cover cover',
-      'background-image-opacity': 1
+      'background-image-opacity': 1,
+      'text-margin-x': 5
     }).update();
 
     this.cy.style().selector('#addDataField').css({
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color': '#eeeeee',
+      'background-color': 'white',
       'background-image': './assets/ico/data.png',
       "width": "20",
       "height": "20",
       "shape": "rectangle",
       'background-fit': 'cover cover',
-      'background-image-opacity': 1
+      'background-image-opacity': 1,
+      'text-margin-x': 5
     }).update();
 
     this.cy.style().selector('#getJsonData').css({
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color': '#eeeeee',
+      'background-color': 'white',
       'background-image': './assets/ico/json.png',
       "width": "20",
       "height": "20",
       "shape": "rectangle",
       'background-fit': 'cover cover',
-      'background-image-opacity': 1
+      'background-image-opacity': 1,
+      'text-margin-x': 5
     }).update();
 
     this.cy.style().selector('#uploadExcel').css({
       'label': 'data(label)',
       "text-valign": "center",
       "text-halign": "right",
-      'background-color': '#eeeeee',
+      'background-color': 'white',
       'background-image': './assets/ico/excel.png',
       "width": "20",
       "height": "20",
       "shape": "rectangle",
       'background-fit': 'cover cover',
-      'background-image-opacity': 1
+      'background-image-opacity': 1,
+      'text-margin-x': 5
     }).update();
 
 
