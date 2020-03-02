@@ -31,9 +31,9 @@ export class AppComponent implements OnInit {
     "text-halign": "left",
     'label': 'data(label)',
     'background-color': '#4287f5',
-    "shape": "tag",
-    "width": "10",
-    "height": "10",
+    "shape": "round-tag",
+    "width": "13",
+    "height": "13",
     'text-margin-x': -5
   }
 
@@ -42,9 +42,9 @@ export class AppComponent implements OnInit {
     "text-valign": "center",
     "text-halign": "left",
     'background-color': '#32a836',
-    "shape": "tag",
-    "width": "10",
-    "height": "10",
+    "shape": "round-tag",
+    "width": "13",
+    "height": "13",
     'text-margin-x': -5
   }
 
@@ -57,6 +57,19 @@ export class AppComponent implements OnInit {
     "width": "10",
     "height": "10",
     'text-margin-x': 5
+  }
+
+  public dataStyleExcel: any = {
+    'label': 'data(label)',
+    "text-valign": "center",
+    "text-halign": "right",
+    'background-color': '#c2beb2',
+    "shape": "round-tag",
+    "width": "13",
+    "height": "13",
+    'text-margin-x': 5,
+    'z-compound-depth':'top',
+    'z-index':1
   }
 
   public linkingData;
@@ -97,7 +110,7 @@ export class AppComponent implements OnInit {
           for (var i = 0; i < dataFilter[0].length; i++) {
             let idData = this.getRandomId();
             this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent }, grabbable: false, position: { x: positionX, y: positionY } }]);
-            this.cy.style().selector('#' + idData).style(this.dataStyle).update();
+            this.cy.style().selector('#' + idData).style(this.dataStyleExcel).update();
             this.cy.on('tap', '#' + idData, function (e) {
               if (!this.isParent()) {
                 if (node_1 == null) {
@@ -110,8 +123,11 @@ export class AppComponent implements OnInit {
               }
             });
             positionY += 25;
+            
+            
           }
           positionX += 300;
+          console.log(this.cy.getElementById(idParent));
         });
 
       };
@@ -213,7 +229,13 @@ export class AppComponent implements OnInit {
             'label': 'data(label)',
             'background-color': 'white',
             'font-weight': 'bold',
-            'shape': 'roundrectangle'
+            'shape': 'roundrectangle',
+            'border-width': 2,
+            'border-color': '#3A7ECF',
+            'text-margin-y': -8,
+            'overlay-color': '#ccc',
+            // 'overlay-opacity':0.5,
+            'overlay-padding':5
           }
         },
         {
@@ -225,7 +247,9 @@ export class AppComponent implements OnInit {
             'target-arrow-shape': 'triangle',
             "curve-style": "unbundled-bezier",
             "control-point-distances": [5, -5],
-            "control-point-weights": [0.250, 0.75]
+            "control-point-weights": [0.250, 0.75],
+            'overlay-color': '#ccc',
+            'overlay-padding':5
           }
         }
       ],
