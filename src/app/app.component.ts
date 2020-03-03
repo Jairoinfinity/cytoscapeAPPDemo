@@ -68,8 +68,8 @@ export class AppComponent implements OnInit {
     "width": "13",
     "height": "13",
     'text-margin-x': 5,
-    'z-compound-depth':'top',
-    'z-index':1
+    'z-compound-depth': 'top',
+    'z-index': 1
   }
 
   public linkingData;
@@ -87,6 +87,10 @@ export class AppComponent implements OnInit {
     var node_2 = null;
     var aux_node = null;
     var dblTap = false;
+
+    var deleteEdgeOrNode = (e) => {
+      this.cy.remove(e);
+    }
 
     this.uploadExcelService.statusFile.subscribe(target => {
       if (target.files.length !== 1) throw new Error('Cannot use multiple files');
@@ -123,11 +127,10 @@ export class AppComponent implements OnInit {
               }
             });
             positionY += 25;
-            
-            
+
+
           }
           positionX += 300;
-          console.log(this.cy.getElementById(idParent));
         });
 
       };
@@ -235,7 +238,7 @@ export class AppComponent implements OnInit {
             'text-margin-y': -8,
             'overlay-color': '#ccc',
             // 'overlay-opacity':0.5,
-            'overlay-padding':5
+            'overlay-padding': 5
           }
         },
         {
@@ -249,7 +252,7 @@ export class AppComponent implements OnInit {
             "control-point-distances": [5, -5],
             "control-point-weights": [0.250, 0.75],
             'overlay-color': '#ccc',
-            'overlay-padding':5
+            'overlay-padding': 5
           }
         }
       ],
@@ -261,38 +264,92 @@ export class AppComponent implements OnInit {
       pan: { x: 200, y: 50 }
     });
 
-    var setEdges = (node) => {
-      if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
-        if (node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent) {
-          if (node_1.parent()._private.data.id == this.nodeParent) {
-            let color = this.colorEdge;
-            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
-            this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
-              'width': 3,
-              'line-color': color,
-              'target-arrow-color': color,
-              'target-arrow-shape': 'triangle',
-              "curve-style": "unbundled-bezier",
-              "control-point-distances": [5, -5],
-              "control-point-weights": [0.250, 0.75]
-            }).update();
-          } else {
-            let color = node_2._private.style['background-color'].strValue;
-            this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node, target: node_1._private.data.id } })
-            this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
-              'width': 3,
-              'line-color': color,
-              'target-arrow-color': color,
-              'target-arrow-shape': 'triangle',
-              "curve-style": "unbundled-bezier",
-              "control-point-distances": [5, -5],
-              "control-point-weights": [0.250, 0.75]
-            }).update();
-          }
-        }
+    var createEdge = (node) => {      
+      if (node_1.parent()._private.data.id == this.nodeParent) {
+        let color = this.colorEdge;
+        this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
+        this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
+          'width': 3,
+          'line-color': color,
+          'target-arrow-color': color,
+          'target-arrow-shape': 'triangle',
+          "curve-style": "unbundled-bezier",
+          "control-point-distances": [5, -5],
+          "control-point-weights": [0.250, 0.75]
+        }).update();
+      } else {
+        let color = node_2._private.style['background-color'].strValue;
+        this.cy.add({ group: 'edges', data: { id: node + '_' + node_1._private.data.id, source: node, target: node_1._private.data.id } })
+        this.cy.style().selector('#' + node + '_' + node_1._private.data.id).style({
+          'width': 3,
+          'line-color': color,
+          'target-arrow-color': color,
+          'target-arrow-shape': 'triangle',
+          "curve-style": "unbundled-bezier",
+          "control-point-distances": [5, -5],
+          "control-point-weights": [0.250, 0.75]
+        }).update();
       }
       node_1 = null;
       node_2 = null;
+    }
+
+    var checkEdges = (node) => {
+      let jsonData = this.cy.json();
+      let idNode;
+      let idEdge;
+      let nodeData;
+      let edgesData;
+      if (node_1.parent()._private.data.id == this.nodeParent) {
+        idNode = node_1._private.data.id;
+        idEdge = node_1._private.data.id + '_' + node;
+        nodeData = node_2;
+      } else {
+        idNode = node;
+        idEdge = node + '_' + node_1._private.data.id;
+        nodeData = node_1;
+      }
+
+      edgesData = jsonData.elements.edges.filter(n => n.data.id == idEdge);
+
+      if (edgesData.length == 0) {
+        let principalNode = jsonData.elements.nodes.filter(n => n.data.id == idNode);
+        if (principalNode[0].data.rol == 'Link') {
+          jsonData.elements.edges.forEach(e => {
+            let data = e.data.id;
+            data = data.split("_");
+            let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
+            
+            if(idNode === data[0] && target[0].data.parent == nodeData._private.data.parent){
+              deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
+            }
+          });
+        } else {
+          jsonData.elements.edges.forEach(e => {
+            let data = e.data.id;
+            data = data.split("_");
+                        
+            if(idNode === data[0]){
+              deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
+            }
+          });
+        }
+      }
+      createEdge(node);
+    }
+
+    var setEdges = (node) => {
+      if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
+        let jsonData = this.cy.json();
+
+        if (node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent) {
+          if (jsonData.elements.hasOwnProperty('edges')) {
+            checkEdges(node);
+          } else {
+            createEdge(node);
+          }
+        }
+      }
     }
 
     var selectNode = (node) => {
@@ -311,7 +368,7 @@ export class AppComponent implements OnInit {
 
     this.cy.add(
       [
-        { group: 'nodes', data: { id: 'Task_ID', label: 'Task ID', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 100 } },
+        { group: 'nodes', data: { id: 'Task-ID', label: 'Task ID', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 100 } },
         { group: 'nodes', data: { id: 'PDS-L1', label: 'PDS-L1', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 125 } },
         { group: 'nodes', data: { id: 'PDS-L2', label: 'PDS-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 150 } },
         { group: 'nodes', data: { id: 'PDS-L3', label: 'PDS-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 175 } },
@@ -320,8 +377,8 @@ export class AppComponent implements OnInit {
         { group: 'nodes', data: { id: 'LOC-L2', label: 'LOC-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 250 } },
         { group: 'nodes', data: { id: 'LOC-L3', label: 'LOC-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 275 } },
         { group: 'nodes', data: { id: 'Name', label: 'Name', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 300 } },
-        { group: 'nodes', data: { id: 'Planned_Start', label: 'Planned Start', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 325 } },
-        { group: 'nodes', data: { id: 'Planned_Finish', label: 'Planned Finish', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 350 } },
+        { group: 'nodes', data: { id: 'Planned-Start', label: 'Planned Start', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 325 } },
+        { group: 'nodes', data: { id: 'Planned-Finish', label: 'Planned Finish', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 350 } },
         { group: 'nodes', data: { id: 'Weight', label: 'Weight', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 375 } },
         { group: 'nodes', data: { id: 'Description', label: 'Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 400 } },
         { group: 'nodes', data: { id: 'PDS-L4-Description', label: 'PDS-L4 Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 425 } },
@@ -341,7 +398,7 @@ export class AppComponent implements OnInit {
       ]
     );
 
-    this.cy.style().selector('#Task_ID').style(this.linkingFeldStyle).update();
+    this.cy.style().selector('#Task-ID').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L3').style(this.linkingFeldStyle).update();
@@ -352,8 +409,8 @@ export class AppComponent implements OnInit {
 
 
     this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Planned_Start').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Planned_Finish').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Planned-Start').style(this.dataFieldStyle).update();
+    this.cy.style().selector('#Planned-Finish').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Weight').style(this.dataFieldStyle).update();
     this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
     this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
@@ -426,10 +483,6 @@ export class AppComponent implements OnInit {
         selectNode(this._private);
       }
     });
-
-    var deleteEdgeOrNode = (e) => {
-      this.cy.remove(e);
-    }
 
     this.cy.on('tap', 'edge', function (evt) {
       let interval;
