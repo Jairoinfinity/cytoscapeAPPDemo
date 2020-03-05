@@ -10,7 +10,7 @@ import { DataFieldService } from './services/data-field.service';
 import { UploadExcelService } from './services/upload-excel.service';
 import * as XLSX from 'xlsx';
 
-type AOA = any[][];
+type AOA = any[][]; //AOA = Arrays of Arrays.
 
 @Component({
   selector: 'app-root',
@@ -19,7 +19,7 @@ type AOA = any[][];
 })
 export class AppComponent implements OnInit {
   data: AOA = [[1, 2], [3, 4]];
-  public cy: any;
+  public cy: cytoscape;
   public nodeParent: String = "Progress Items";
   public nodeStyle: any = {
     node: null,
@@ -85,31 +85,43 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     var node_1 = null;
     var node_2 = null;
-    var aux_node = null;
-    var dblTap = false;
+    var doubleTap = false;
 
+    /*
+    * It removes any object of type 'Node' or 'Edge' that is 
+    * passed to it by parameters.
+    */
     var deleteEdgeOrNode = (e) => {
       this.cy.remove(e);
     }
 
+    /*
+    * Service for uploading an excel file to show 
+    * the information in Cytoscape
+    */
     this.uploadExcelService.statusFile.subscribe(target => {
+      /* wire up file reader */
       if (target.files.length !== 1) throw new Error('Cannot use multiple files');
       const reader: FileReader = new FileReader();
       reader.onload = (e: any) => {
+        /* read workbook */
         const bstr: string = e.target.result;
         const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
         var s = 0;
         let positionX = 200;
+        /* grab first sheet */
         wb.SheetNames.forEach(wsname => {
           const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
           let idParent = this.getRandomId();
           let positionY = 100;
 
+          /* save data */
           this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
 
           let dataFilter = this.data.filter(d => d.length > 0);
 
+          /* Create the nodes */
           this.cy.add([{ data: { id: idParent, label: 'Excel Sheet: ' + wsname } }]);
           for (var i = 0; i < dataFilter[0].length; i++) {
             let idData = this.getRandomId();
@@ -137,6 +149,9 @@ export class AppComponent implements OnInit {
       reader.readAsBinaryString(target.files[0]);
     })
 
+    /*
+    * Service in charge of creating a new Linking Field
+    */
     this.linkingService.statusFile.subscribe(data => {
       this.linkingData = data;
       let json = this.getDataJson();
@@ -147,18 +162,22 @@ export class AppComponent implements OnInit {
       let lastNode;
       let idLink = this.getRandomId();
 
+      /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
         this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
       }
 
+      /* Check if there are already 'Link' type nodes to choose the position of the last node */
       if (nodosLikns.length > 0) {
         lastNode = nodosLikns[nodosLikns.length - 1];
         positionY = (lastNode.position.y + 25);
       }
 
+      /* Create the new node and add the style */
       this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
       this.cy.style().selector('#' + idLink).style(this.linkingFeldStyle).update();
 
+      /* Checks for 'Data' type nodes and if there are, removes them and adds them in a lower position */
       if (nodosData.length > 0) {
         nodosData.forEach(e => {
           let data = e;
@@ -168,6 +187,7 @@ export class AppComponent implements OnInit {
         });
       }
 
+      /* Adds Click or tap functionality to new nodes */
       this.cy.on('tap', '#' + idLink, function (e) {
         if (!this.isParent()) {
           if (node_1 == null) {
@@ -181,6 +201,7 @@ export class AppComponent implements OnInit {
       });
     })
 
+    /* Service in charge of creating new 'Data Field' nodes */
     this.dataFieldService.statusFile.subscribe(data => {
       this.dataField = data;
       let json = this.getDataJson();
@@ -191,21 +212,25 @@ export class AppComponent implements OnInit {
       let positionY = 100;
       let idData = this.getRandomId();
 
+      /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
         this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
       }
 
+      /* Check if there are 'Data' type nodes, if so, get the last position */
       if (nodosData.length > 0) {
         lastNode = nodosData[nodosData.length - 1];
         positionY = (lastNode.position.y + 25);
-      } else if (nodosLikns.length > 0) {
+      } else if (nodosLikns.length > 0) { /* If no 'Data' nodes exist, check the 'Link' nodes to get the last position */
         lastNode = nodosLikns[nodosLikns.length - 1];
         positionY = (lastNode.position.y + 25);
       }
 
+      /* Create the new node and add the style */
       this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: positionY } }]);
       this.cy.style().selector('#' + idData).style(this.dataFieldStyle).update();
 
+      /* Adds Click or tap functionality to new nodes */
       this.cy.nodes().on('tap', '#' + idData, function (e) {
         if (!this.isParent()) {
           if (node_1 == null) {
@@ -219,6 +244,9 @@ export class AppComponent implements OnInit {
       });
     })
 
+    /*
+    * We start Cytoscape with the initial configuration
+    */
     this.cy = cytoscape({
 
       container: document.getElementById('cy'),
@@ -237,7 +265,6 @@ export class AppComponent implements OnInit {
             'border-color': '#3A7ECF',
             'text-margin-y': -8,
             'overlay-color': '#ccc',
-            // 'overlay-opacity':0.5,
             'overlay-padding': 5
           }
         },
@@ -264,9 +291,15 @@ export class AppComponent implements OnInit {
       pan: { x: 200, y: 50 }
     });
 
-    var createEdge = (node) => {      
+    /*
+    * Create the links between nodes
+    */
+    var createEdge = (node) => {
+      /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
       if (node_1.parent()._private.data.id == this.nodeParent) {
         let color = this.colorEdge;
+
+        /* We create the link between nodes and give it its style */
         this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
         this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
           'width': 3,
@@ -277,8 +310,10 @@ export class AppComponent implements OnInit {
           "control-point-distances": [5, -5],
           "control-point-weights": [0.250, 0.75]
         }).update();
-      } else {
+      } else { /* If the parent of the first node is not equal to the main 'Progress Items' node */
         let color = node_2._private.style['background-color'].strValue;
+        
+        /* We create the link between nodes and give it its style */
         this.cy.add({ group: 'edges', data: { id: node + '_' + node_1._private.data.id, source: node, target: node_1._private.data.id } })
         this.cy.style().selector('#' + node + '_' + node_1._private.data.id).style({
           'width': 3,
@@ -294,12 +329,17 @@ export class AppComponent implements OnInit {
       node_2 = null;
     }
 
+    /*
+    * Checks if links already exist between nodes or between other parent nodes
+    */
     var checkEdges = (node) => {
       let jsonData = this.cy.json();
       let idNode;
       let idEdge;
       let nodeData;
       let edgesData;
+
+      /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
       if (node_1.parent()._private.data.id == this.nodeParent) {
         idNode = node_1._private.data.id;
         idEdge = node_1._private.data.id + '_' + node;
@@ -310,16 +350,25 @@ export class AppComponent implements OnInit {
         nodeData = node_1;
       }
 
+      /* Filters the data of all links between nodes that are equal to the new link you are trying to create */
       edgesData = jsonData.elements.edges.filter(n => n.data.id == idEdge);
 
+      /* Checks if a link already created between nodes does not exist */
       if (edgesData.length == 0) {
+        /* We filter to get the information of the selected main node */
         let principalNode = jsonData.elements.nodes.filter(n => n.data.id == idNode);
+
+        /* We check if the node type is Link */
         if (principalNode[0].data.rol == 'Link') {
+          /* We go through all the links between link type nodes */
           jsonData.elements.edges.forEach(e => {
             let data = e.data.id;
             data = data.split("_");
+
+            /* We filter the secondary node */
             let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
             
+            /*  */
             if(idNode === data[0] && target[0].data.parent == nodeData._private.data.parent){
               deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
             }
@@ -486,11 +535,11 @@ export class AppComponent implements OnInit {
 
     this.cy.on('tap', 'edge', function (evt) {
       let interval;
-      if (dblTap == false) {
-        dblTap = true;
+      if (doubleTap == false) {
+        doubleTap = true;
         interval = setInterval(() => {
-          if (dblTap == true) {
-            dblTap = false;
+          if (doubleTap == true) {
+            doubleTap = false;
             clearInterval(interval);
           }
         }, 1000)
