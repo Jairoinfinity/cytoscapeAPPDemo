@@ -1,0 +1,12 @@
+<div class="modal-header">
+    <h4 class="modal-title">Main node</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<div class="modal-body">
+    <label for="nodeValue">Name Node</label>
+    <input [(ngModel)]="nodeText" type="text" class="form-control" id="nodeValue">
+    <br>
+    <button [disabled]="nodeText == null || nodeText == ''" (click)="setNode()" class="btn btn-primary">Submit</button>
+</div>

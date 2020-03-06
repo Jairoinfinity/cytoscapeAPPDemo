@@ -10,8 +10,6 @@ import { LinkingService } from '../../services/linkingservice.service';
 export class ModalLinkingFieldComponent implements OnInit {
   linkingFieldText: string = null;
 
-  
-
   constructor(
     public activeModal: NgbActiveModal,
     public linkingService: LinkingService
