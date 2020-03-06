@@ -368,16 +368,18 @@ export class AppComponent implements OnInit {
             /* We filter the secondary node */
             let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
             
-            /*  */
+            /* Checks if the link node is already linked to another node of the same parent and removes that link */
             if(idNode === data[0] && target[0].data.parent == nodeData._private.data.parent){
               deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
             }
           });
-        } else {
+        } else { /* If the node is of type Data */
+          /* We go through all the links between data type nodes */
           jsonData.elements.edges.forEach(e => {
             let data = e.data.id;
             data = data.split("_");
-                        
+            
+            /* Check if there's already a link to that node and remove it */
             if(idNode === data[0]){
               deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
             }
@@ -387,20 +389,28 @@ export class AppComponent implements OnInit {
       createEdge(node);
     }
 
+    /*
+    * Main function to create the links between nodes
+    */
     var setEdges = (node) => {
+      /* Check that the nodes to be linked are not the same or do not have the same parent */
       if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
         let jsonData = this.cy.json();
-
+        /* Check that one of the two nodes to be linked has as its parent the main node */
         if (node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent) {
+          /* Checks for linked nodes */
           if (jsonData.elements.hasOwnProperty('edges')) {
             checkEdges(node);
-          } else {
+          } else { /* Creates the link between the nodes */
             createEdge(node);
           }
         }
       }
     }
 
+    /*
+    * Changes the color of the selected node to mark it 
+    */
     var selectNode = (node) => {
       if (this.nodeStyle.node == null) {
         this.nodeStyle.node = node.data.id;
@@ -414,7 +424,7 @@ export class AppComponent implements OnInit {
       }
     }
 
-
+    /* Add the 'Progress Items' nodes and create the menu */
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'Task-ID', label: 'Task ID', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 100 } },
@@ -447,6 +457,7 @@ export class AppComponent implements OnInit {
       ]
     );
 
+    /* Add all styles */
     this.cy.style().selector('#Task-ID').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
     this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
@@ -520,7 +531,7 @@ export class AppComponent implements OnInit {
       'text-margin-x': 5
     }).update();
 
-
+    /* Adds Click or tap functionality to new nodes */
     this.cy.nodes().on('tap', function (e) {
       if (!this.isParent()) {
         if (node_1 == null) {
@@ -533,6 +544,7 @@ export class AppComponent implements OnInit {
       }
     });
 
+    /* Eliminates double-tapped links */
     this.cy.on('tap', 'edge', function (evt) {
       let interval;
       if (doubleTap == false) {
@@ -548,33 +560,37 @@ export class AppComponent implements OnInit {
       }
     });
 
+    /* Displays the modal for introducing a new Linking Field */
     this.cy.on('tap', '#addLinking', () => {
       let modalRef = this.modalService.open(ModalLinkingFieldComponent);
     })
 
+    /* Displays the modal for entering a new Data Field */
     this.cy.on('tap', '#addData', () => {
       let modalRef = this.modalService.open(ModalDataFieldComponent);
     })
 
+    /* Displays the modal for selecting an excel file */
     this.cy.on('tap', '#upExcel', () => {
       let modalRef = this.modalService.open(ModalUploadExcelComponent);
     })
 
+    /* Return a json with all the node information */
     var dataJSON = () => {
       return this.cy.json();
     }
 
+    /* It shows a json with all the information of the nodes */
     this.cy.on('tap', '#getJson', function () {
       console.log(dataJSON());
     })
-
-    this.getDataJson();
   }
-
+  /* Return a json with all the node information */
   getDataJson() {
     return this.cy.json();
   }
 
+  /* Generates a random ID for the nodes */
   getRandomId() {
     let chars = "qwertyuiopasdfghjklcvbnmQWERTYUIOPASDFGHJKLXCVBNM1234567890"
     let id = "";
