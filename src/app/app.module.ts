@@ -6,13 +6,15 @@ import { ModalLinkingFieldComponent } from './components/modal-linking-field/mod
 import { FormsModule } from '@angular/forms';
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
+import { ModalNewParentComponent } from './components/modal-new-parent/modal-new-parent.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ModalLinkingFieldComponent,
     ModalDataFieldComponent,
-    ModalUploadExcelComponent
+    ModalUploadExcelComponent,
+    ModalNewParentComponent
   ],
   imports: [
     BrowserModule,
@@ -24,7 +26,8 @@ import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal
   entryComponents: [
     ModalLinkingFieldComponent,
     ModalDataFieldComponent,
-    ModalUploadExcelComponent
+    ModalUploadExcelComponent,
+    ModalNewParentComponent
   ]
 
 })

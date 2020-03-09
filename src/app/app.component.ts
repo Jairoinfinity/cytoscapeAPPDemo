@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import cytoscape from 'cytoscape';
-import { CloneVisitor } from '@angular/compiler/src/i18n/i18n_ast';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
+import { ModalNewParentComponent } from './components/modal-new-parent/modal-new-parent.component';
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
 import { LinkingService } from './services/linkingservice.service';
 import { DataFieldService } from './services/data-field.service';
 import { UploadExcelService } from './services/upload-excel.service';
+import { NewNodeService } from './services/new-node.service';
 import * as XLSX from 'xlsx';
 
 type AOA = any[][]; //AOA = Arrays of Arrays.
@@ -19,8 +20,283 @@ type AOA = any[][]; //AOA = Arrays of Arrays.
 })
 export class AppComponent implements OnInit {
   data: AOA = [[1, 2], [3, 4]];
+  public mainNodeData = [
+    { /* This first JSON, refers to the parent node  */
+      'Name': 'Progress Items', // Father's name
+      'Rol': 'Parent', // Type of node to be
+      'Locked': true // If it is blocked or can be moved freely
+    },
+    /* The next nodes will be the children */
+    {
+      'Name': 'Task ID', // Child Node Name
+      'Rol': 'Link', // Type of node to be
+      'Parent': 'Progress Items', // Node Father
+      'Locked': true, // If it is blocked or can be moved freely
+      'Position': { // Node position
+        'x': 100,
+        'y': 100
+      },
+      'Style': { // Node styles, for more information see the Cytoscape information
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'PDS-L1',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 125
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'PDS-L2',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 150
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'PDS-L3',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 175
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'PDS-L4',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 200
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'LOC-L1',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 225
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'LOC-L2',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 250
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'LOC-L3',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 275
+      },
+      'Style': {
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'label': 'data(label)',
+        'background-color': '#4287f5',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'Name',
+      'Rol': 'Data',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 300
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'Planned Start',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 325
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'Planned Finish',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 350
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'Weight',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 375
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'Description',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 400
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }, {
+      'Name': 'PDS-L4 Description',
+      'Rol': 'Link',
+      'Parent': 'Progress Items',
+      'Locked': true,
+      'Position': {
+        'x': 100,
+        'y': 425
+      },
+      'Style': {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'left',
+        'background-color': '#32a836',
+        'shape': 'round-tag',
+        'width': '13',
+        'height': '13',
+        'text-margin-x': -5
+      }
+    }
+  ];
   public cy: cytoscape;
-  public nodeParent: String = "Progress Items";
+  public nodeParent: String = null;
   public nodeStyle: any = {
     node: null,
     backgroundStyle: null
@@ -48,17 +324,6 @@ export class AppComponent implements OnInit {
     'text-margin-x': -5
   }
 
-  public dataStyle: any = {
-    'label': 'data(label)',
-    "text-valign": "center",
-    "text-halign": "right",
-    'background-color': '#c2beb2',
-    "shape": "round-tag",
-    "width": "10",
-    "height": "10",
-    'text-margin-x': 5
-  }
-
   public dataStyleExcel: any = {
     'label': 'data(label)',
     "text-valign": "center",
@@ -79,7 +344,8 @@ export class AppComponent implements OnInit {
     private modalService: NgbModal,
     public linkingService: LinkingService,
     public dataFieldService: DataFieldService,
-    public uploadExcelService: UploadExcelService
+    public uploadExcelService: UploadExcelService,
+    public newNodeService: NewNodeService
   ) { }
 
   ngOnInit() {
@@ -94,6 +360,8 @@ export class AppComponent implements OnInit {
     var deleteEdgeOrNode = (e) => {
       this.cy.remove(e);
     }
+
+    this.newNodeService.statusFile.subscribe(node => this.nodeParent = node);
 
     /*
     * Service for uploading an excel file to show 
@@ -155,16 +423,16 @@ export class AppComponent implements OnInit {
     this.linkingService.statusFile.subscribe(data => {
       this.linkingData = data;
       let json = this.getDataJson();
-      let parentNode = json.elements.nodes.filter(n => n.data.id == "Progress Items");
-      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
-      let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
+      let parentNode = json.elements.nodes.filter(n => n.data.id == this.nodeParent);
+      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == this.nodeParent && n.data.rol == 'Link');
+      let nodosData = json.elements.nodes.filter(n => n.data.parent == this.nodeParent && n.data.rol == 'Data');
       let positionY = 100;
       let lastNode;
       let idLink = this.getRandomId();
 
       /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
-        this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
+        this.cy.add([{ data: { id: this.nodeParent, label: this.nodeParent }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
       }
 
       /* Check if there are already 'Link' type nodes to choose the position of the last node */
@@ -174,7 +442,7 @@ export class AppComponent implements OnInit {
       }
 
       /* Create the new node and add the style */
-      this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
+      this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: this.nodeParent, rol: 'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
       this.cy.style().selector('#' + idLink).style(this.linkingFeldStyle).update();
 
       /* Checks for 'Data' type nodes and if there are, removes them and adds them in a lower position */
@@ -182,7 +450,7 @@ export class AppComponent implements OnInit {
         nodosData.forEach(e => {
           let data = e;
           this.cy.remove('#' + e.data.id);
-          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25) } }]);
+          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25) } }]);
           this.cy.style().selector('#' + e.data.id).style(this.dataFieldStyle).update();
         });
       }
@@ -205,16 +473,16 @@ export class AppComponent implements OnInit {
     this.dataFieldService.statusFile.subscribe(data => {
       this.dataField = data;
       let json = this.getDataJson();
-      let parentNode = json.elements.nodes.filter(n => n.data.id == "Progress Items");
-      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Link');
-      let nodosData = json.elements.nodes.filter(n => n.data.parent == "Progress Items" && n.data.rol == 'Data');
+      let parentNode = json.elements.nodes.filter(n => n.data.id == this.nodeParent);
+      let nodosLikns = json.elements.nodes.filter(n => n.data.parent == this.nodeParent && n.data.rol == 'Link');
+      let nodosData = json.elements.nodes.filter(n => n.data.parent == this.nodeParent && n.data.rol == 'Data');
       let lastNode;
       let positionY = 100;
       let idData = this.getRandomId();
 
       /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
-        this.cy.add([{ data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
+        this.cy.add([{ data: { id: this.nodeParent, label: this.nodeParent }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
       }
 
       /* Check if there are 'Data' type nodes, if so, get the last position */
@@ -227,7 +495,7 @@ export class AppComponent implements OnInit {
       }
 
       /* Create the new node and add the style */
-      this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: positionY } }]);
+      this.cy.add([{ group: 'nodes', data: { id: idData, label: data, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: positionY } }]);
       this.cy.style().selector('#' + idData).style(this.dataFieldStyle).update();
 
       /* Adds Click or tap functionality to new nodes */
@@ -312,7 +580,7 @@ export class AppComponent implements OnInit {
         }).update();
       } else { /* If the parent of the first node is not equal to the main 'Progress Items' node */
         let color = node_2._private.style['background-color'].strValue;
-        
+
         /* We create the link between nodes and give it its style */
         this.cy.add({ group: 'edges', data: { id: node + '_' + node_1._private.data.id, source: node, target: node_1._private.data.id } })
         this.cy.style().selector('#' + node + '_' + node_1._private.data.id).style({
@@ -367,10 +635,10 @@ export class AppComponent implements OnInit {
 
             /* We filter the secondary node */
             let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
-            
+
             /* Checks if the link node is already linked to another node of the same parent and removes that link */
-            if(idNode === data[0] && target[0].data.parent == nodeData._private.data.parent){
-              deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
+            if (idNode === data[0] && target[0].data.parent == nodeData._private.data.parent) {
+              deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
             }
           });
         } else { /* If the node is of type Data */
@@ -378,10 +646,10 @@ export class AppComponent implements OnInit {
           jsonData.elements.edges.forEach(e => {
             let data = e.data.id;
             data = data.split("_");
-            
+
             /* Check if there's already a link to that node and remove it */
-            if(idNode === data[0]){
-              deleteEdgeOrNode(this.cy.getElementById(data[0]+"_"+data[1]));
+            if (idNode === data[0]) {
+              deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
             }
           });
         }
@@ -424,27 +692,9 @@ export class AppComponent implements OnInit {
       }
     }
 
-    /* Add the 'Progress Items' nodes and create the menu */
+    /* Add the menu */
     this.cy.add(
       [
-        { group: 'nodes', data: { id: 'Task-ID', label: 'Task ID', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 100 } },
-        { group: 'nodes', data: { id: 'PDS-L1', label: 'PDS-L1', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 125 } },
-        { group: 'nodes', data: { id: 'PDS-L2', label: 'PDS-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 150 } },
-        { group: 'nodes', data: { id: 'PDS-L3', label: 'PDS-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 175 } },
-        { group: 'nodes', data: { id: 'PDS-L4', label: 'PDS-L4', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 200 } },
-        { group: 'nodes', data: { id: 'LOC-L1', label: 'LOC-L1', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 225 } },
-        { group: 'nodes', data: { id: 'LOC-L2', label: 'LOC-L2', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 250 } },
-        { group: 'nodes', data: { id: 'LOC-L3', label: 'LOC-L3', parent: 'Progress Items', rol: 'Link' }, grabbable: false, position: { x: 100, y: 275 } },
-        { group: 'nodes', data: { id: 'Name', label: 'Name', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 300 } },
-        { group: 'nodes', data: { id: 'Planned-Start', label: 'Planned Start', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 325 } },
-        { group: 'nodes', data: { id: 'Planned-Finish', label: 'Planned Finish', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 350 } },
-        { group: 'nodes', data: { id: 'Weight', label: 'Weight', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 375 } },
-        { group: 'nodes', data: { id: 'Description', label: 'Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 400 } },
-        { group: 'nodes', data: { id: 'PDS-L4-Description', label: 'PDS-L4 Description', parent: 'Progress Items', rol: 'Data' }, grabbable: false, position: { x: 100, y: 425 } },
-
-        { data: { id: 'Progress Items', label: 'Progress Items' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false },
-
-
         { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 200, y: 30 } },
         { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 375, y: 30 } },
         { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' }, selected: false, grabbable: false, position: { x: 600, y: 30 } },
@@ -458,23 +708,6 @@ export class AppComponent implements OnInit {
     );
 
     /* Add all styles */
-    this.cy.style().selector('#Task-ID').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#PDS-L1').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#PDS-L2').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#PDS-L3').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#PDS-L4').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#LOC-L1').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#LOC-L2').style(this.linkingFeldStyle).update();
-    this.cy.style().selector('#LOC-L3').style(this.linkingFeldStyle).update();
-
-
-    this.cy.style().selector('#Name').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Planned-Start').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Planned-Finish').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Weight').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#Description').style(this.dataFieldStyle).update();
-    this.cy.style().selector('#PDS-L4-Description').style(this.dataFieldStyle).update();
-
     this.cy.style().selector('#addLinkingField').css({
       'label': 'data(label)',
       "text-valign": "center",
@@ -531,19 +764,6 @@ export class AppComponent implements OnInit {
       'text-margin-x': 5
     }).update();
 
-    /* Adds Click or tap functionality to new nodes */
-    this.cy.nodes().on('tap', function (e) {
-      if (!this.isParent()) {
-        if (node_1 == null) {
-          node_1 = this;
-        } else {
-          node_2 = this;
-          setEdges(node_2._private.data.id);
-        }
-        selectNode(this._private);
-      }
-    });
-
     /* Eliminates double-tapped links */
     this.cy.on('tap', 'edge', function (evt) {
       let interval;
@@ -560,14 +780,33 @@ export class AppComponent implements OnInit {
       }
     });
 
+    /* Adds Click or tap functionality to new nodes */
+    this.cy.nodes().on('tap', function (e) {
+      if (!this.isParent()) {
+        if (node_1 == null) {
+          node_1 = this;
+        } else {
+          node_2 = this;
+          setEdges(node_2._private.data.id);
+        }
+        selectNode(this._private);
+      }
+    });
+
     /* Displays the modal for introducing a new Linking Field */
     this.cy.on('tap', '#addLinking', () => {
       let modalRef = this.modalService.open(ModalLinkingFieldComponent);
+      if (this.nodeParent == null) {
+        let modalRef = this.modalService.open(ModalNewParentComponent);
+      }
     })
 
     /* Displays the modal for entering a new Data Field */
     this.cy.on('tap', '#addData', () => {
       let modalRef = this.modalService.open(ModalDataFieldComponent);
+      if (this.nodeParent == null) {
+        let modalRef = this.modalService.open(ModalNewParentComponent);
+      }
     })
 
     /* Displays the modal for selecting an excel file */
@@ -584,6 +823,52 @@ export class AppComponent implements OnInit {
     this.cy.on('tap', '#getJson', function () {
       console.log(dataJSON());
     })
+
+    /*
+    * Generates a main node that is parameterized as an array
+    */
+    var mainNode = (nodes) => {
+      if (nodes.length > 0) {
+        nodes.forEach(e => {
+          let idNode = this.getRandomId();
+          if (e.Rol == 'Parent') {
+            this.nodeParent = idNode;
+            if (e.Locked) {
+              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
+            } else {
+              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' } });
+            }
+
+            if (e.hasOwnProperty('Style')) {
+              this.cy.style().selector('#' + idNode).style(e.Style).update();
+            }
+          } else {
+            if (e.Locked) {
+              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, grabbable: false, position: { x: e.Position.x, y: e.Position.y } });
+            } else {
+              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, position: { x: e.Position.x, y: e.Position.y } });
+            }
+
+            if (e.hasOwnProperty('Style')) {
+              this.cy.style().selector('#' + idNode).style(e.Style).update();
+            }
+          }
+          this.cy.on('tap', '#' + idNode, function () {
+            if (!this.isParent()) {
+              if (node_1 == null) {
+                node_1 = this;
+              } else {
+                node_2 = this;
+                setEdges(node_2._private.data.id);
+              }
+              selectNode(this._private);
+            }
+          })
+        });
+      }
+    }
+
+    mainNode(this.mainNodeData);
   }
   /* Return a json with all the node information */
   getDataJson() {
