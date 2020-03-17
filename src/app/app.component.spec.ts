@@ -36,13 +36,61 @@ describe('AppComponent', () => {
       expect(result).toBeDefined();
     });
   });
+  
+  describe('Test of the checkEdges() funcion', () => {
+    it('Funtion checkEdges', () => {
+      let result = app.checkEdges("lHo7DyjTvT");
 
-  describe('Test of the ngOnInit() function', () => {
-    it('Function onInit', () => {
-      let result = app.ngOnInit();
+      expect(result).toBeTruthy();
+    })
+  })
 
-      expect(result);
-    });
-  });
+  describe('Test of the setEdges() funcion', () => {
+    it('Funtion setEdges', () => {
+      let result = app.setEdges("lHo7DyjTvT");
+
+      expect(result).toBeTruthy();
+    })
+  })
+
+  describe('Test of the selectNode() funcion', () => {
+    it('Funtion selectNode', () => {
+      let result = app.selectNode("lHo7DyjTvT");
+
+      expect(result).toBeTruthy();
+    })
+  })
+
+  describe('Test of the addMenu() funcion', () => {
+    it('Funtion addMenu', () => {
+      let result = app.addMenu();
+
+      expect(result).toBeTruthy();
+    })
+  })
+
+  describe('Test of the deleteEdgeOrNode() funcion', () => {
+    it('Funtion deleteEdgeOrNode', () => {
+      let result = app.deleteEdgeOrNode("#uBcuvycW6S_nDnSmNOC5l");
+
+      expect(result).toBeTruthy();
+    })
+  })
+
+  describe('Test of the initCytoscape() funcion', () => {
+    it('Funtion initCytoscape', () => {
+      let result = app.initCytoscape();
+
+      expect(result).toBeTruthy();
+    })
+  })
+
+  describe('Test of the createEdge() funcion', () => {
+    it('Funtion createEdge', () => {
+      let result = app.createEdge("lHo7DyjTvT");
+
+      expect(result).toBeTruthy();
+    })
+  })
   
 });
