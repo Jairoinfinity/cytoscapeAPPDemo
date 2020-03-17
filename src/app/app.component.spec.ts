@@ -61,30 +61,6 @@ describe('AppComponent', () => {
     })
   })
 
-  describe('Test of the addMenu() funcion', () => {
-    it('Funtion addMenu', () => {
-      let result = app.addMenu();
-
-      expect(result).toBeTruthy();
-    })
-  })
-
-  describe('Test of the deleteEdgeOrNode() funcion', () => {
-    it('Funtion deleteEdgeOrNode', () => {
-      let result = app.deleteEdgeOrNode("#uBcuvycW6S_nDnSmNOC5l");
-
-      expect(result).toBeTruthy();
-    })
-  })
-
-  describe('Test of the initCytoscape() funcion', () => {
-    it('Funtion initCytoscape', () => {
-      let result = app.initCytoscape();
-
-      expect(result).toBeTruthy();
-    })
-  })
-
   describe('Test of the createEdge() funcion', () => {
     it('Funtion createEdge', () => {
       let result = app.createEdge("lHo7DyjTvT");
