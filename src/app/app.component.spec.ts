@@ -1,7 +1,12 @@
-import { TestBed, async } from '@angular/core/testing';
+import { TestBed, async, ComponentFixture } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { Component } from '@angular/core';
+import { throwError } from 'rxjs';
+import { componentFactoryName } from '@angular/compiler';
 
 describe('AppComponent', () => {
+  let app: AppComponent;
+  let fixture: ComponentFixture<AppComponent>;
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
@@ -10,22 +15,34 @@ describe('AppComponent', () => {
     }).compileComponents();
   }));
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it(`should have as title 'citoscape'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('citoscape');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
+  beforeEach(() => {
+    fixture = TestBed.createComponent(AppComponent);
+    app = fixture.componentInstance;
     fixture.detectChanges();
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('citoscape app is running!');
   });
+  
+  describe('Test of the getDataJson() function', () => {
+    it('return a json', () => {
+      let result = app.getDataJson();
+
+      expect(result).toBeDefined();
+    });
+  });
+  
+  describe('Test of the getRandomId() function', () => {
+    it('return an id', () => {
+      let result = app.getRandomId();
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('Test of the ngOnInit() function', () => {
+    it('Function onInit', () => {
+      let result = app.ngOnInit();
+
+      expect(result);
+    });
+  });
+  
 });

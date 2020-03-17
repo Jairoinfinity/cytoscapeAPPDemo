@@ -339,6 +339,9 @@ export class AppComponent implements OnInit {
 
   public linkingData;
   public dataField;
+  public node_1 = null;
+  public node_2 = null;
+  public doubleTap = false;
 
   constructor(
     private modalService: NgbModal,
@@ -349,25 +352,109 @@ export class AppComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    var node_1 = null;
-    var node_2 = null;
-    var doubleTap = false;
+    let node_1 = this.node_1;
+    let node_2 = this.node_2;
+    var getNode_1 = () => {
+      return this.node_1
+    }
 
+    var getNode_2 = () => {
+      return this.node_2
+    }
+
+    var getDoubleTap = () => {
+      return this.doubleTap
+    }
+
+    var setNode_1 = (node) => {
+      console.log("setNode_1")
+      this.node_1 = node;
+      console.log(this.node_1)
+    }
+
+    var setNode_2 = (node) => {
+      this.node_2 = node;
+    }
+
+    var setDoubleTap = (tap: boolean) => {
+      this.doubleTap = tap;
+    }
+
+    /*
+    * We start Cytoscape with the initial configuration
+    */
+    this.initCytoscape();
+
+    this.newNodeService.statusFile.subscribe(node => this.nodeParent = node);
     /*
     * It removes any object of type 'Node' or 'Edge' that is 
     * passed to it by parameters.
     */
-    var deleteEdgeOrNode = (e) => {
-      this.cy.remove(e);
+    let deleteEdgeOrNode = (e) => {
+      this.deleteEdgeOrNode(e);
     }
 
-    this.newNodeService.statusFile.subscribe(node => this.nodeParent = node);
+    var setTapNodes = (idData) => {
+      
+      this.cy.on('tap', '#' + idData, function (e) {
+        if (!this.isParent()) {
+          if (node_1 == null) {
+            setNode_1(this);
+            node_1 = getNode_1();
+            console.log("Set node 1", getNode_1());
+          } else {
+            setNode_2(this);
+            node_2 = getNode_2();
+            console.log("Set node 2", getNode_2());
+            setEdges(node_2._private.data.id);
+          }
+          selectNode(this._private);
+        }
+      });
+    }
+
+    /*
+    * Generates a main node that is parameterized as an array
+    */
+    var mainNode = (nodes) => {
+      if (nodes.length > 0) {
+        nodes.forEach(e => {
+          let idNode = this.getRandomId();
+          if (e.Rol == 'Parent') {
+            this.nodeParent = idNode;
+            if (e.Locked) {
+              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
+            } else {
+              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' } });
+            }
+
+            if (e.hasOwnProperty('Style')) {
+              this.cy.style().selector('#' + idNode).style(e.Style).update();
+            }
+          } else {
+            if (e.Locked) {
+              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, grabbable: false, position: { x: e.Position.x, y: e.Position.y } });
+            } else {
+              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, position: { x: e.Position.x, y: e.Position.y } });
+            }
+
+            if (e.hasOwnProperty('Style')) {
+              this.cy.style().selector('#' + idNode).style(e.Style).update();
+            }
+          }
+          setTapNodes(idNode);
+        });
+      }
+    }
+
+    mainNode(this.mainNodeData);
 
     /*
     * Service for uploading an excel file to show 
     * the information in Cytoscape
     */
     this.uploadExcelService.statusFile.subscribe(target => {
+
       /* wire up file reader */
       if (target.files.length !== 1) throw new Error('Cannot use multiple files');
       const reader: FileReader = new FileReader();
@@ -395,17 +482,7 @@ export class AppComponent implements OnInit {
             let idData = this.getRandomId();
             this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent }, grabbable: false, position: { x: positionX, y: positionY } }]);
             this.cy.style().selector('#' + idData).style(this.dataStyleExcel).update();
-            this.cy.on('tap', '#' + idData, function (e) {
-              if (!this.isParent()) {
-                if (node_1 == null) {
-                  node_1 = this;
-                } else {
-                  node_2 = this;
-                  setEdges(node_2._private.data.id);
-                }
-                selectNode(this._private);
-              }
-            });
+            setTapNodes(idData);
             positionY += 25;
 
 
@@ -456,17 +533,7 @@ export class AppComponent implements OnInit {
       }
 
       /* Adds Click or tap functionality to new nodes */
-      this.cy.on('tap', '#' + idLink, function (e) {
-        if (!this.isParent()) {
-          if (node_1 == null) {
-            node_1 = this;
-          } else {
-            node_2 = this;
-            setEdges(node_2._private.data.id);
-          }
-          selectNode(this._private);
-        }
-      });
+      setTapNodes(idLink);
     })
 
     /* Service in charge of creating new 'Data Field' nodes */
@@ -499,200 +566,177 @@ export class AppComponent implements OnInit {
       this.cy.style().selector('#' + idData).style(this.dataFieldStyle).update();
 
       /* Adds Click or tap functionality to new nodes */
-      this.cy.nodes().on('tap', '#' + idData, function (e) {
-        if (!this.isParent()) {
-          if (node_1 == null) {
-            node_1 = this;
-          } else {
-            node_2 = this;
-            setEdges(node_2._private.data.id);
-          }
-          selectNode(this._private);
-        }
-      });
+      setTapNodes(idData);
     })
 
     /*
-    * We start Cytoscape with the initial configuration
+    * Main function to create the links between nodes
     */
-    this.cy = cytoscape({
-
-      container: document.getElementById('cy'),
-
-      style: [
-        {
-          selector: ':parent',
-          style: {
-            'text-valign': 'top',
-            'text-halign': 'center',
-            'label': 'data(label)',
-            'background-color': 'white',
-            'font-weight': 'bold',
-            'shape': 'roundrectangle',
-            'border-width': 2,
-            'border-color': '#3A7ECF',
-            'text-margin-y': -8,
-            'overlay-color': '#ccc',
-            'overlay-padding': 5
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'width': 3,
-            'line-color': '#ccc',
-            'target-arrow-color': '#ccc',
-            'target-arrow-shape': 'triangle',
-            "curve-style": "unbundled-bezier",
-            "control-point-distances": [5, -5],
-            "control-point-weights": [0.250, 0.75],
-            'overlay-color': '#ccc',
-            'overlay-padding': 5
-          }
-        }
-      ],
-
-      layout: {
-        name: 'grid',
-        rows: 1
-      },
-      pan: { x: 200, y: 50 }
-    });
-
-    /*
-    * Create the links between nodes
-    */
-    var createEdge = (node) => {
-      /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
-      if (node_1.parent()._private.data.id == this.nodeParent) {
-        let color = this.colorEdge;
-
-        /* We create the link between nodes and give it its style */
-        this.cy.add({ group: 'edges', data: { id: node_1._private.data.id + '_' + node, source: node_1._private.data.id, target: node } });
-        this.cy.style().selector('#' + node_1._private.data.id + '_' + node).style({
-          'width': 3,
-          'line-color': color,
-          'target-arrow-color': color,
-          'target-arrow-shape': 'triangle',
-          "curve-style": "unbundled-bezier",
-          "control-point-distances": [5, -5],
-          "control-point-weights": [0.250, 0.75]
-        }).update();
-      } else { /* If the parent of the first node is not equal to the main 'Progress Items' node */
-        let color = node_2._private.style['background-color'].strValue;
-
-        /* We create the link between nodes and give it its style */
-        this.cy.add({ group: 'edges', data: { id: node + '_' + node_1._private.data.id, source: node, target: node_1._private.data.id } })
-        this.cy.style().selector('#' + node + '_' + node_1._private.data.id).style({
-          'width': 3,
-          'line-color': color,
-          'target-arrow-color': color,
-          'target-arrow-shape': 'triangle',
-          "curve-style": "unbundled-bezier",
-          "control-point-distances": [5, -5],
-          "control-point-weights": [0.250, 0.75]
-        }).update();
-      }
+    let setEdges = (node) => {
+      console.log("let setEdges")
+      this.setEdges(node);
       node_1 = null;
       node_2 = null;
     }
 
     /*
-    * Checks if links already exist between nodes or between other parent nodes
-    */
-    var checkEdges = (node) => {
-      let jsonData = this.cy.json();
-      let idNode;
-      let idEdge;
-      let nodeData;
-      let edgesData;
-
-      /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
-      if (node_1.parent()._private.data.id == this.nodeParent) {
-        idNode = node_1._private.data.id;
-        idEdge = node_1._private.data.id + '_' + node;
-        nodeData = node_2;
-      } else {
-        idNode = node;
-        idEdge = node + '_' + node_1._private.data.id;
-        nodeData = node_1;
-      }
-
-      /* Filters the data of all links between nodes that are equal to the new link you are trying to create */
-      edgesData = jsonData.elements.edges.filter(n => n.data.id == idEdge);
-
-      /* Checks if a link already created between nodes does not exist */
-      if (edgesData.length == 0) {
-        /* We filter to get the information of the selected main node */
-        let principalNode = jsonData.elements.nodes.filter(n => n.data.id == idNode);
-
-        /* We check if the node type is Link */
-        if (principalNode[0].data.rol == 'Link') {
-          /* We go through all the links between link type nodes */
-          jsonData.elements.edges.forEach(e => {
-            let data = e.data.id;
-            data = data.split("_");
-
-            /* We filter the secondary node */
-            let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
-
-            /* Checks if the link node is already linked to another node of the same parent and removes that link */
-            if (idNode === data[0] && target[0].data.parent == nodeData._private.data.parent) {
-              deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
-            }
-          });
-        } else { /* If the node is of type Data */
-          /* We go through all the links between data type nodes */
-          jsonData.elements.edges.forEach(e => {
-            let data = e.data.id;
-            data = data.split("_");
-
-            /* Check if there's already a link to that node and remove it */
-            if (idNode === data[0]) {
-              deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
-            }
-          });
-        }
-      }
-      createEdge(node);
-    }
-
-    /*
-    * Main function to create the links between nodes
-    */
-    var setEdges = (node) => {
-      /* Check that the nodes to be linked are not the same or do not have the same parent */
-      if (node_1._private.data.id != node_2._private.data.id && node_1.parent() != node_2.parent()) {
-        let jsonData = this.cy.json();
-        /* Check that one of the two nodes to be linked has as its parent the main node */
-        if (node_1.parent()._private.data.id == this.nodeParent || node_2.parent()._private.data.id == this.nodeParent) {
-          /* Checks for linked nodes */
-          if (jsonData.elements.hasOwnProperty('edges')) {
-            checkEdges(node);
-          } else { /* Creates the link between the nodes */
-            createEdge(node);
-          }
-        }
-      }
-    }
-
-    /*
     * Changes the color of the selected node to mark it 
     */
-    var selectNode = (node) => {
-      if (this.nodeStyle.node == null) {
-        this.nodeStyle.node = node.data.id;
-        this.nodeStyle.backgroundStyle = { 'background-color': node.style['background-color'].strValue }
-        this.colorEdge = node.style['background-color'].strValue;
-        this.cy.style().selector('#' + node.data.id).style({ 'background-color': 'black' }).update();
-      } else {
-        this.cy.style().selector('#' + this.nodeStyle.node).style(this.nodeStyle.backgroundStyle).update();
-        this.nodeStyle.node = null;
-        this.nodeStyle.backgroundStyle = null
-      }
+    let selectNode = (node) => {
+      this.selectNode(node);
     }
 
     /* Add the menu */
+    this.addMenu();
+
+    /* Eliminates double-tapped links */
+    this.cy.on('tap', 'edge', function (evt) {
+      let doubleTap = getDoubleTap();
+      let interval;
+      if (doubleTap == false) {
+        setDoubleTap(true);
+        interval = setInterval(() => {
+          if (doubleTap == true) {
+            setDoubleTap(false);
+            clearInterval(interval);
+          }
+        }, 1000)
+      } else {
+        deleteEdgeOrNode(this);
+      }
+    });
+
+    /* Displays the modal for introducing a new Linking Field */
+    this.cy.on('tap', '#addLinking', () => {
+      let modalRef = this.modalService.open(ModalLinkingFieldComponent);
+      if (this.nodeParent == null) {
+        let modalRef = this.modalService.open(ModalNewParentComponent);
+      }
+    })
+
+    /* Displays the modal for entering a new Data Field */
+    this.cy.on('tap', '#addData', () => {
+      let modalRef = this.modalService.open(ModalDataFieldComponent);
+      if (this.nodeParent == null) {
+        let modalRef = this.modalService.open(ModalNewParentComponent);
+      }
+    })
+
+    /* Displays the modal for selecting an excel file */
+    this.cy.on('tap', '#upExcel', () => {
+      let modalRef = this.modalService.open(ModalUploadExcelComponent);
+    })
+
+    /* Return a json with all the node information */
+    var dataJSON = () => {
+      return this.cy.json();
+    }
+
+    /* It shows a json with all the information of the nodes */
+    this.cy.on('tap', '#getJson', function () {
+      console.log(dataJSON());
+    })
+  }
+
+  /*
+    * Checks if links already exist between nodes or between other parent nodes
+    */
+  checkEdges(node) {
+    let jsonData = this.cy.json();
+    let idNode;
+    let idEdge;
+    let nodeData;
+    let edgesData;
+console.log("checkEdges")
+    /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
+    if (this.node_1.parent()._private.data.id == this.nodeParent) {
+      idNode = this.node_1._private.data.id;
+      idEdge = this.node_1._private.data.id + '_' + node;
+      nodeData = this.node_2;
+    } else {
+      idNode = node;
+      idEdge = node + '_' + this.node_1._private.data.id;
+      nodeData = this.node_1;
+    }
+
+    /* Filters the data of all links between nodes that are equal to the new link you are trying to create */
+    edgesData = jsonData.elements.edges.filter(n => n.data.id == idEdge);
+
+    /* Checks if a link already created between nodes does not exist */
+    if (edgesData.length == 0) {
+      /* We filter to get the information of the selected main node */
+      let principalNode = jsonData.elements.nodes.filter(n => n.data.id == idNode);
+
+      /* We check if the node type is Link */
+      if (principalNode[0].data.rol == 'Link') {
+        /* We go through all the links between link type nodes */
+        jsonData.elements.edges.forEach(e => {
+          let data = e.data.id;
+          data = data.split("_");
+
+          /* We filter the secondary node */
+          let target = jsonData.elements.nodes.filter(n => n.data.id == data[1]);
+
+          /* Checks if the link node is already linked to another node of the same parent and removes that link */
+          if (idNode === data[0] && target[0].data.parent == nodeData._private.data.parent) {
+            this.deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
+          }
+        });
+      } else { /* If the node is of type Data */
+        /* We go through all the links between data type nodes */
+        jsonData.elements.edges.forEach(e => {
+          let data = e.data.id;
+          data = data.split("_");
+
+          /* Check if there's already a link to that node and remove it */
+          if (idNode === data[0]) {
+            this.deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
+          }
+        });
+      }
+    }
+    this.createEdge(node);
+  }
+
+  /*
+    * Main function to create the links between nodes
+    */
+  setEdges(node) {
+    console.log("setEdges")
+    /* Check that the nodes to be linked are not the same or do not have the same parent */
+    if (this.node_1._private.data.id != this.node_2._private.data.id && this.node_1.parent() != this.node_2.parent()) {
+      let jsonData = this.cy.json();
+      /* Check that one of the two nodes to be linked has as its parent the main node */
+      if (this.node_1.parent()._private.data.id == this.nodeParent || this.node_2.parent()._private.data.id == this.nodeParent) {
+        /* Checks for linked nodes */
+        if (jsonData.elements.hasOwnProperty('edges')) {
+          this.checkEdges(node);
+        } else { /* Creates the link between the nodes */
+          console.log("setEdges else")
+          this.createEdge(node);
+        }
+      }
+    }
+  }
+
+  /*
+   * Changes the color of the selected node to mark it 
+   */
+  selectNode(node) {
+    if (this.nodeStyle.node == null) {
+      this.nodeStyle.node = node.data.id;
+      this.nodeStyle.backgroundStyle = { 'background-color': node.style['background-color'].strValue }
+      this.colorEdge = node.style['background-color'].strValue;
+      this.cy.style().selector('#' + node.data.id).style({ 'background-color': 'black' }).update();
+    } else {
+      this.cy.style().selector('#' + this.nodeStyle.node).style(this.nodeStyle.backgroundStyle).update();
+      this.nodeStyle.node = null;
+      this.nodeStyle.backgroundStyle = null
+    }
+  }
+
+  /* Add the menu */
+  addMenu() {
     this.cy.add(
       [
         { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 200, y: 30 } },
@@ -763,113 +807,8 @@ export class AppComponent implements OnInit {
       'background-image-opacity': 1,
       'text-margin-x': 5
     }).update();
-
-    /* Eliminates double-tapped links */
-    this.cy.on('tap', 'edge', function (evt) {
-      let interval;
-      if (doubleTap == false) {
-        doubleTap = true;
-        interval = setInterval(() => {
-          if (doubleTap == true) {
-            doubleTap = false;
-            clearInterval(interval);
-          }
-        }, 1000)
-      } else {
-        deleteEdgeOrNode(this);
-      }
-    });
-
-    /* Adds Click or tap functionality to new nodes */
-    this.cy.nodes().on('tap', function (e) {
-      if (!this.isParent()) {
-        if (node_1 == null) {
-          node_1 = this;
-        } else {
-          node_2 = this;
-          setEdges(node_2._private.data.id);
-        }
-        selectNode(this._private);
-      }
-    });
-
-    /* Displays the modal for introducing a new Linking Field */
-    this.cy.on('tap', '#addLinking', () => {
-      let modalRef = this.modalService.open(ModalLinkingFieldComponent);
-      if (this.nodeParent == null) {
-        let modalRef = this.modalService.open(ModalNewParentComponent);
-      }
-    })
-
-    /* Displays the modal for entering a new Data Field */
-    this.cy.on('tap', '#addData', () => {
-      let modalRef = this.modalService.open(ModalDataFieldComponent);
-      if (this.nodeParent == null) {
-        let modalRef = this.modalService.open(ModalNewParentComponent);
-      }
-    })
-
-    /* Displays the modal for selecting an excel file */
-    this.cy.on('tap', '#upExcel', () => {
-      let modalRef = this.modalService.open(ModalUploadExcelComponent);
-    })
-
-    /* Return a json with all the node information */
-    var dataJSON = () => {
-      return this.cy.json();
-    }
-
-    /* It shows a json with all the information of the nodes */
-    this.cy.on('tap', '#getJson', function () {
-      console.log(dataJSON());
-    })
-
-    /*
-    * Generates a main node that is parameterized as an array
-    */
-    var mainNode = (nodes) => {
-      if (nodes.length > 0) {
-        nodes.forEach(e => {
-          let idNode = this.getRandomId();
-          if (e.Rol == 'Parent') {
-            this.nodeParent = idNode;
-            if (e.Locked) {
-              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
-            } else {
-              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' } });
-            }
-
-            if (e.hasOwnProperty('Style')) {
-              this.cy.style().selector('#' + idNode).style(e.Style).update();
-            }
-          } else {
-            if (e.Locked) {
-              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, grabbable: false, position: { x: e.Position.x, y: e.Position.y } });
-            } else {
-              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, position: { x: e.Position.x, y: e.Position.y } });
-            }
-
-            if (e.hasOwnProperty('Style')) {
-              this.cy.style().selector('#' + idNode).style(e.Style).update();
-            }
-          }
-          this.cy.on('tap', '#' + idNode, function () {
-            if (!this.isParent()) {
-              if (node_1 == null) {
-                node_1 = this;
-              } else {
-                node_2 = this;
-                setEdges(node_2._private.data.id);
-              }
-              selectNode(this._private);
-            }
-          })
-        });
-      }
-    }
-
-    mainNode(this.mainNodeData);
   }
+
   /* Return a json with all the node information */
   getDataJson() {
     return this.cy.json();
@@ -883,5 +822,103 @@ export class AppComponent implements OnInit {
       id += chars.charAt(Math.floor(Math.random() * 58));
     }
     return id;
+  }
+
+  /*
+    * It removes any object of type 'Node' or 'Edge' that is 
+    * passed to it by parameters.
+    */
+  deleteEdgeOrNode(e) {
+    this.cy.remove(e);
+  }
+
+  /*
+   * We start Cytoscape with the initial configuration
+   */
+  initCytoscape() {
+    this.cy = cytoscape({
+
+      container: document.getElementById('cy'),
+
+      style: [
+        {
+          selector: ':parent',
+          style: {
+            'text-valign': 'top',
+            'text-halign': 'center',
+            'label': 'data(label)',
+            'background-color': 'white',
+            'font-weight': 'bold',
+            'shape': 'roundrectangle',
+            'border-width': 2,
+            'border-color': '#3A7ECF',
+            'text-margin-y': -8,
+            'overlay-color': '#ccc',
+            'overlay-padding': 5
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 3,
+            'line-color': '#ccc',
+            'target-arrow-color': '#ccc',
+            'target-arrow-shape': 'triangle',
+            "curve-style": "unbundled-bezier",
+            "control-point-distances": [5, -5],
+            "control-point-weights": [0.250, 0.75],
+            'overlay-color': '#ccc',
+            'overlay-padding': 5
+          }
+        }
+      ],
+
+      layout: {
+        name: 'grid',
+        rows: 1
+      },
+      pan: { x: 200, y: 50 }
+    });
+  }
+
+  /*
+    * Create the links between nodes
+    */
+  createEdge(node) {
+    console.log("createEdge")
+    /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
+    if (this.node_1.parent()._private.data.id == this.nodeParent) {
+      let color = this.colorEdge;
+      
+      /* We create the link between nodes and give it its style */
+      this.cy.add({ group: 'edges', data: { id: this.node_1._private.data.id + '_' + node, source: this.node_1._private.data.id, target: node } });
+      this.cy.style().selector('#' + this.node_1._private.data.id + '_' + node).style({
+        'width': 3,
+        'line-color': color,
+        'target-arrow-color': color,
+        'target-arrow-shape': 'triangle',
+        "curve-style": "unbundled-bezier",
+        "control-point-distances": [5, -5],
+        "control-point-weights": [0.250, 0.75]
+      }).update();
+    } else { /* If the parent of the first node is not equal to the main 'Progress Items' node */
+      let color = this.node_2._private.style['background-color'].strValue;
+      
+      /* We create the link between nodes and give it its style */
+      this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } })
+      this.cy.style().selector('#' + node + '_' + this.node_1._private.data.id).style({
+        'width': 3,
+        'line-color': color,
+        'target-arrow-color': color,
+        'target-arrow-shape': 'triangle',
+        "curve-style": "unbundled-bezier",
+        "control-point-distances": [5, -5],
+        "control-point-weights": [0.250, 0.75]
+      }).update();
+    }
+    console.log(this.node_1, this.node_2)
+    this.node_1 = null;
+    this.node_2 = null;
+    console.log(this.node_1, this.node_2)
   }
 }
