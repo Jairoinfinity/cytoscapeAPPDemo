@@ -200,7 +200,7 @@ export class AppComponent implements OnInit {
       }
     }, {
       'Name': 'Planned Start',
-      'Rol': 'Link',
+      'Rol': 'Data',
       'Parent': 'Progress Items',
       'Locked': true,
       'Position': {
@@ -219,7 +219,7 @@ export class AppComponent implements OnInit {
       }
     }, {
       'Name': 'Planned Finish',
-      'Rol': 'Link',
+      'Rol': 'Data',
       'Parent': 'Progress Items',
       'Locked': true,
       'Position': {
@@ -238,7 +238,7 @@ export class AppComponent implements OnInit {
       }
     }, {
       'Name': 'Weight',
-      'Rol': 'Link',
+      'Rol': 'Data',
       'Parent': 'Progress Items',
       'Locked': true,
       'Position': {
@@ -257,7 +257,7 @@ export class AppComponent implements OnInit {
       }
     }, {
       'Name': 'Description',
-      'Rol': 'Link',
+      'Rol': 'Data',
       'Parent': 'Progress Items',
       'Locked': true,
       'Position': {
@@ -276,7 +276,7 @@ export class AppComponent implements OnInit {
       }
     }, {
       'Name': 'PDS-L4 Description',
-      'Rol': 'Link',
+      'Rol': 'Data',
       'Parent': 'Progress Items',
       'Locked': true,
       'Position': {
@@ -367,9 +367,7 @@ export class AppComponent implements OnInit {
     }
 
     var setNode_1 = (node) => {
-      console.log("setNode_1")
       this.node_1 = node;
-      console.log(this.node_1)
     }
 
     var setNode_2 = (node) => {
@@ -401,11 +399,9 @@ export class AppComponent implements OnInit {
           if (node_1 == null) {
             setNode_1(this);
             node_1 = getNode_1();
-            console.log("Set node 1", getNode_1());
           } else {
             setNode_2(this);
             node_2 = getNode_2();
-            console.log("Set node 2", getNode_2());
             setEdges(node_2._private.data.id);
           }
           selectNode(this._private);
@@ -573,7 +569,6 @@ export class AppComponent implements OnInit {
     * Main function to create the links between nodes
     */
     let setEdges = (node) => {
-      console.log("let setEdges")
       this.setEdges(node);
       node_1 = null;
       node_2 = null;
@@ -647,7 +642,7 @@ export class AppComponent implements OnInit {
     let idEdge;
     let nodeData;
     let edgesData;
-console.log("checkEdges")
+    
     /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
     if (this.node_1.parent()._private.data.id == this.nodeParent) {
       idNode = this.node_1._private.data.id;
@@ -689,7 +684,7 @@ console.log("checkEdges")
           data = data.split("_");
 
           /* Check if there's already a link to that node and remove it */
-          if (idNode === data[0]) {
+          if (idNode == data[0]) {
             this.deleteEdgeOrNode(this.cy.getElementById(data[0] + "_" + data[1]));
           }
         });
@@ -702,7 +697,6 @@ console.log("checkEdges")
     * Main function to create the links between nodes
     */
   setEdges(node) {
-    console.log("setEdges")
     /* Check that the nodes to be linked are not the same or do not have the same parent */
     if (this.node_1._private.data.id != this.node_2._private.data.id && this.node_1.parent() != this.node_2.parent()) {
       let jsonData = this.cy.json();
@@ -712,7 +706,6 @@ console.log("checkEdges")
         if (jsonData.elements.hasOwnProperty('edges')) {
           this.checkEdges(node);
         } else { /* Creates the link between the nodes */
-          console.log("setEdges else")
           this.createEdge(node);
         }
       }
@@ -885,7 +878,6 @@ console.log("checkEdges")
     * Create the links between nodes
     */
   createEdge(node) {
-    console.log("createEdge")
     /* We check that the parent of the first selected node is the same as the main 'Progress Items' node */
     if (this.node_1.parent()._private.data.id == this.nodeParent) {
       let color = this.colorEdge;
@@ -916,9 +908,7 @@ console.log("checkEdges")
         "control-point-weights": [0.250, 0.75]
       }).update();
     }
-    console.log(this.node_1, this.node_2)
     this.node_1 = null;
     this.node_2 = null;
-    console.log(this.node_1, this.node_2)
   }
 }
