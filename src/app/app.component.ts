@@ -5,10 +5,15 @@ import { ModalLinkingFieldComponent } from './components/modal-linking-field/mod
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
 import { LinkingService } from './services/linkingservice.service';
 import { DataFieldService } from './services/data-field.service';
+import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
+import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
 
 import { linkingFieldIcon, dataFieldIcon, submitButtonIcon } from './icons';
 import { MainNodeModel } from './models/mainNodeModel';
 import { ExtraNodesModel } from './models/extraNodesModel';
+
+import { Apollo } from 'apollo-angular';
+import gql from 'graphql-tag';
 
 @Component({
   selector: 'mapper',
@@ -113,7 +118,8 @@ export class AppComponent implements OnInit {
   constructor(
     private modalService: NgbModal,
     public linkingService: LinkingService,
-    public dataFieldService: DataFieldService
+    public dataFieldService: DataFieldService,
+    private apollo: Apollo
   ) { }
 
   ngOnInit() {
@@ -157,7 +163,7 @@ export class AppComponent implements OnInit {
       let positionY = 100;
       let lastNode;
       let idLink = this.getRandomId();
-
+      
       /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
         this.cy.add([{ data: { id: this.nodeParent, label: this.nodeParent }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
@@ -166,7 +172,7 @@ export class AppComponent implements OnInit {
       /* Check if there are already 'Link' type nodes to choose the position of the last node */
       if (nodosLikns.length > 0) {
         lastNode = nodosLikns[nodosLikns.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       }
 
       /* Create the new node and add the style */
@@ -176,10 +182,27 @@ export class AppComponent implements OnInit {
       /* Checks for 'Data' type nodes and if there are, removes them and adds them in a lower position */
       if (nodosData.length > 0) {
         nodosData.forEach(e => {
-          let data = e;
           this.cy.remove('#' + e.data.id);
-          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25) } }]);
+          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 30) } }]);
           this.cy.style().selector('#' + e.data.id).style(this.dataFieldStyle).update();
+
+          let edgesData = json.elements.edges.filter(n => n.data.source == e.data.id);
+          
+          edgesData.forEach(edge => {
+            this.cy.remove('#' + edge.data.id);
+
+            /* We create the link between nodes and give it its style */
+            this.cy.add({ group: 'edges', data: { id: edge.data.id, source: edge.data.source, target: edge.data.target } });
+            this.cy.style().selector('#' + edge.data.id).style({
+              'width': 3,
+              'line-color': "green",
+              'target-arrow-color': "green",
+              'target-arrow-shape': 'triangle',
+              "curve-style": "unbundled-bezier",
+              "control-point-distances": [5, -5],
+              "control-point-weights": [0.250, 0.75]
+            }).update();
+          });
         });
       }
 
@@ -206,10 +229,10 @@ export class AppComponent implements OnInit {
       /* Check if there are 'Data' type nodes, if so, get the last position */
       if (nodosData.length > 0) {
         lastNode = nodosData[nodosData.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       } else if (nodosLikns.length > 0) { /* If no 'Data' nodes exist, check the 'Link' nodes to get the last position */
         lastNode = nodosLikns[nodosLikns.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       }
 
       /* Create the new node and add the style */
@@ -255,10 +278,73 @@ export class AppComponent implements OnInit {
       return this.cy.json();
     }
 
+    let submitData = () => {
+      this.submitData();
+    }
     /* It shows a json with all the information of the nodes */
     this.cy.on('tap', '#submitData', function () {
-      console.log(dataJSON());
+      submitData();
     })
+  }
+
+  submitData() {
+    let data = this.getDataJson();
+    let directed = true;
+    let nodes = [];
+    let edges = [];
+    
+    data.elements.nodes.forEach(e => {
+      nodes.push({
+        id: e.data.id,
+        metadata: {
+          fieldName: e.data.label,
+          tableName: e.data.parent,
+          objectKey: "",
+          nodeType: 1,
+          objectType: 1,
+        }
+      })
+    });
+
+    if (data.elements.hasOwnProperty('edges')) {
+      data.elements.edges.forEach(e => {
+        edges.push({
+          source: e.data.source,
+          target: e.data.target,
+          directed: directed,
+          metadata: {
+            edgeType: 0
+          }
+        })
+      });
+    }
+
+    
+    let submitData = gql`
+      mutation createMapping($nodes: [GraphNode], $edges: [GraphEdge]){
+        createMapping(graph: {
+          directed: true
+          nodes: $nodes
+          edges: $edges
+        }) {
+          ok
+        }
+      }
+      `;
+    this.apollo.mutate({
+      mutation: submitData,
+      variables: {
+        nodes: nodes,
+        edges: edges
+      }
+    }).subscribe(res => {
+      let resData:any = res;
+      if(resData.data.createMapping.ok){
+        let modalRef = this.modalService.open(SubmitOkComponent);
+      }else{
+        let modalRef = this.modalService.open(SubmitErrorComponent);
+      }
+    });
   }
 
   /*
@@ -348,7 +434,7 @@ export class AppComponent implements OnInit {
       let parentID = this.getRandomId();
       /* Create the nodes */
       this.cy.add([{ data: { id: parentID, label: e.title } }]);
-      this.cy.style().selector('#'+parentID).style({
+      this.cy.style().selector('#' + parentID).style({
         "border-color": "#e2e2e2",
         "background-color": "#fafafa",
         "padding-left": 15

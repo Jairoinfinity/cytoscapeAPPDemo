@@ -5,23 +5,33 @@ import { AppComponent } from './app.component';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
 import { FormsModule } from '@angular/forms';
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
+import { GraphQLModule } from './services/graphql.module';
+import { HttpClientModule } from '@angular/common/http';
+import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
+import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ModalLinkingFieldComponent,
     ModalDataFieldComponent,
+    SubmitOkComponent,
+    SubmitErrorComponent,
   ],
   imports: [
     BrowserModule,
     NgbModule,
-    FormsModule
+    FormsModule,
+    GraphQLModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent],
   entryComponents: [
     ModalLinkingFieldComponent,
     ModalDataFieldComponent,
+    SubmitOkComponent,
+    SubmitErrorComponent,
   ]
 
 })
