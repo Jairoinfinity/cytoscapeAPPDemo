@@ -15,12 +15,51 @@ import { ExtraNodesModel } from './models/extraNodesModel';
 import { Apollo } from 'apollo-angular';
 import gql from 'graphql-tag';
 
+import { 
+  MappingGraph, GraphNode, GraphEdge, 
+  GraphNodeMeta, GraphEdgeMeta 
+} from './mapgraph';
+
+interface Node {
+  id: String,
+  metadata: {
+    fieldName: String,
+    tableName: String,
+    objectKey: String,
+    nodeType: number,
+    objectType: number,
+  }
+}
+
+interface Edge {
+  source: String,
+  target: String,
+  directed: boolean,
+  metadata: {
+    edgeType: number
+  }
+}
+
+interface Nodes extends Array<Node>{}
+interface Edges extends Array<Edge>{}
+
 @Component({
   selector: 'mapper',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+
+  public graphInput: MappingGraph = { 
+    directed: true,
+    edges: [],
+    nodes: []
+  };
+
+  private inputParent = "Progress Items";
+  private constraintParents = ["Schedule"]; // All aliases for external services being mapped to
+  private externalGqlEndpoint = "https://localhost:5001/graphql"; // <-- whatever your external schedule service is
+  private uploadParents = [];
 
   @Input() mainNodeData: MainNodeModel = {
     title: "Progress Items",
@@ -163,7 +202,7 @@ export class AppComponent implements OnInit {
       let positionY = 100;
       let lastNode;
       let idLink = this.getRandomId();
-      
+
       /* If the parent node 'Progress Items' does not exist, it is created */
       if (parentNode.length == 0) {
         this.cy.add([{ data: { id: this.nodeParent, label: this.nodeParent }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false }])
@@ -187,7 +226,7 @@ export class AppComponent implements OnInit {
           this.cy.style().selector('#' + e.data.id).style(this.dataFieldStyle).update();
 
           let edgesData = json.elements.edges.filter(n => n.data.source == e.data.id);
-          
+
           edgesData.forEach(edge => {
             this.cy.remove('#' + edge.data.id);
 
@@ -288,38 +327,58 @@ export class AppComponent implements OnInit {
   }
 
   submitData() {
-    let data = this.getDataJson();
-    let directed = true;
-    let nodes = [];
-    let edges = [];
-    
-    data.elements.nodes.forEach(e => {
-      nodes.push({
-        id: e.data.id,
-        metadata: {
-          fieldName: e.data.label,
-          tableName: e.data.parent,
-          objectKey: "",
-          nodeType: 1,
-          objectType: 1,
-        }
-      })
-    });
+    // let data = this.getDataJson();
+    // let directed: boolean = true;
+    // let nodes: Nodes = [];
+    // let edges: Edges = [];
+    // let edgeType: number = 1;
 
-    if (data.elements.hasOwnProperty('edges')) {
-      data.elements.edges.forEach(e => {
-        edges.push({
-          source: e.data.source,
-          target: e.data.target,
-          directed: directed,
-          metadata: {
-            edgeType: 0
-          }
-        })
-      });
-    }
+    // data.elements.nodes.forEach(e => {
+    //   nodes.push({
+    //     id: e.data.id,
+    //     metadata: {
+    //       fieldName: e.data.label,
+    //       tableName: e.data.parent,
+    //       objectKey: "",
+    //       nodeType: 1,
+    //       objectType: 1,
+    //     }
+    //   })
+    // });
 
-    
+    // if (data.elements.hasOwnProperty('edges')) {
+    //   data.elements.edges.forEach(e => {
+    //     let nodeData = data.elements.nodes.filter(n => n.data.id == e.data.source);
+
+    //     if (nodeData.data.rol == "Link") {
+    //       edgeType = 0;
+    //     } else {
+    //       edgeType = 1;
+    //     }
+
+    //     nodes.push({
+    //       id: nodeData.data.id,
+    //       metadata: {
+    //         fieldName: nodeData.data.label,
+    //         tableName: nodeData.data.parent,
+    //         objectKey: "",
+    //         nodeType: 1,
+    //         objectType: 1,
+    //       }
+    //     })
+
+    //     edges.push({
+    //       source: e.data.source,
+    //       target: e.data.target,
+    //       directed: directed,
+    //       metadata: {
+    //         edgeType: edgeType
+    //       }
+    //     })
+    //   });
+    // }
+
+
     let submitData = gql`
       mutation createMapping($nodes: [GraphNode], $edges: [GraphEdge]){
         createMapping(graph: {
@@ -334,18 +393,127 @@ export class AppComponent implements OnInit {
     this.apollo.mutate({
       mutation: submitData,
       variables: {
-        nodes: nodes,
-        edges: edges
+        nodes: this.graphInput.nodes,
+        edges: this.graphInput.edges
       }
     }).subscribe(res => {
-      let resData:any = res;
-      if(resData.data.createMapping.ok){
+      let resData: any = res;
+      if (resData.data.createMapping.ok) {
         let modalRef = this.modalService.open(SubmitOkComponent);
-      }else{
+      } else {
         let modalRef = this.modalService.open(SubmitErrorComponent);
       }
     });
   }
+
+  removeFromMappingInput (e) {
+    let sourceTableName = e.source().parent()._private.data.label;
+    let sourceFieldName = e.source()._private.data.label;
+    let sourceTypes = this.getMapTypes(sourceTableName);
+    let sourceId = `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`;
+
+    let targetTableName = e.target().parent()._private.data.label;
+    let targetFieldName = e.target()._private.data.label;
+    let targetTypes = this.getMapTypes(targetTableName);
+    let targetId = `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`;
+
+    // Find and remove nodes and edges from an array 
+    // https://love2dev.com/blog/javascript-remove-from-array/
+    for (let i = 0;i< this.graphInput.nodes.length; i++ ) {
+      if (this.graphInput.nodes[i].id === sourceId ){
+        this.graphInput.nodes.splice(i, 1);
+        i--;
+      } else if (this.graphInput.nodes[i].id === targetId) {
+        this.graphInput.nodes.splice(i, 1);
+        i--;
+      }
+    }
+    for (let i = 0; i < this.graphInput.edges.length; i++ ) {
+      if (this.graphInput.edges[i].source === sourceId && 
+        this.graphInput.edges[i].target === targetId){
+        this.graphInput.edges.splice(i, 1);
+        i--;
+      } 
+    }
+  }
+
+  /** Given the parent of the given node, the following implications are present for the 'type' information
+     *   we need to pass back to the mapping service
+     */
+  getMapTypes (parentLabel) {
+      if (parentLabel === this.inputParent) {
+        return {
+          'objectType':'',
+          'nodeType': 1,
+          'objectKey': null
+        }
+      }
+      // TODO: Loop through this.constraintParents to 
+      for (let i=0; i<this.constraintParents.length; i++){
+        if (this.constraintParents[i] === parentLabel) {
+          return {
+            'objectType': 1, // NOTE: This could be 1 or 2 theoretically
+            'nodeType': 0,
+            'objectKey': this.externalGqlEndpoint // TODO: Replace hard coded
+          };
+        }
+      }
+      // Loop through this.uploadParents
+      for (let i=0; i<this.uploadParents.length; i++){
+        if (this.uploadParents[i] === parentLabel) {
+          return {
+            'objectType':2,
+            'nodeType': 2,
+            // Must remove the addition of 'Excel Sheet: ' for backend to do it's thing properly
+            'objectKey': this.uploadParents[i]
+          };
+        }
+      }
+      throw Error("Created a node without a valid parent!");
+    };
+
+  /** Update the input for the mapper service to currently selected node_1 and node_2 which have had a valid
+     * link created
+     */
+  updateMappingInput () {
+      let sourceTableName = this.node_1.parent()._private.data.label;
+      let sourceFieldName = this.node_1._private.data.label;
+      let sourceTypes = this.getMapTypes(sourceTableName);
+
+      let targetTableName = this.node_2.parent()._private.data.label;
+      let targetFieldName = this.node_2._private.data.label;
+      let targetTypes = this.getMapTypes(targetTableName);
+
+      this.graphInput.nodes.push({
+        id: `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`,
+        metadata: {
+          fieldName: sourceFieldName,
+          tableName: sourceTableName,
+          objectKey: sourceTypes.objectKey,
+          nodeType: sourceTypes.nodeType,
+          objectType: (typeof sourceTypes.objectType === 'string') ? null : sourceTypes.objectType
+        }
+      });
+      this.graphInput.nodes.push({
+        id: `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`,
+        metadata: {
+          fieldName: targetFieldName,
+          tableName: targetTableName,
+          objectKey: targetTypes.objectKey,
+          nodeType: targetTypes.nodeType,
+          objectType: (typeof sourceTypes.objectType === 'string') ? null : sourceTypes.objectType
+        }
+      });
+      let listEnd = this.graphInput.nodes.length;
+      this.graphInput.edges.push({
+        directed: true,
+        source: this.graphInput.nodes[listEnd-2].id,
+        target: this.graphInput.nodes[listEnd-1].id,
+        metadata: {
+          edgeType: (this.node_1._private.data.rol === "Link") ? 0 : 1
+        }
+      })
+    };
 
   /*
   * Main function to create the links between nodes
@@ -651,6 +819,7 @@ export class AppComponent implements OnInit {
     */
   deleteEdgeOrNode(e) {
     try {
+      this.removeFromMappingInput(e);
       this.cy.remove(e);
     } catch (error) {
       return error
@@ -747,6 +916,7 @@ export class AppComponent implements OnInit {
           "control-point-weights": [0.250, 0.75]
         }).update();
       }
+      this.updateMappingInput();
       this.node_1 = null;
       this.node_2 = null;
     } catch (error) {
