@@ -15,33 +15,8 @@ import { ExtraNodesModel } from './models/extraNodesModel';
 import { Apollo } from 'apollo-angular';
 import gql from 'graphql-tag';
 
-import { 
-  MappingGraph, GraphNode, GraphEdge, 
-  GraphNodeMeta, GraphEdgeMeta 
-} from './mapgraph';
+import { MappingGraph } from './mapgraph';
 
-interface Node {
-  id: String,
-  metadata: {
-    fieldName: String,
-    tableName: String,
-    objectKey: String,
-    nodeType: number,
-    objectType: number,
-  }
-}
-
-interface Edge {
-  source: String,
-  target: String,
-  directed: boolean,
-  metadata: {
-    edgeType: number
-  }
-}
-
-interface Nodes extends Array<Node>{}
-interface Edges extends Array<Edge>{}
 
 @Component({
   selector: 'mapper',
@@ -50,7 +25,7 @@ interface Edges extends Array<Edge>{}
 })
 export class AppComponent implements OnInit {
 
-  public graphInput: MappingGraph = { 
+  public graphInput: MappingGraph = {
     directed: true,
     edges: [],
     nodes: []
@@ -312,11 +287,6 @@ export class AppComponent implements OnInit {
       let modalRef = this.modalService.open(ModalDataFieldComponent);
     })
 
-    /* Return a json with all the node information */
-    var dataJSON = () => {
-      return this.cy.json();
-    }
-
     let submitData = () => {
       this.submitData();
     }
@@ -327,59 +297,8 @@ export class AppComponent implements OnInit {
   }
 
   submitData() {
-    // let data = this.getDataJson();
-    // let directed: boolean = true;
-    // let nodes: Nodes = [];
-    // let edges: Edges = [];
-    // let edgeType: number = 1;
-
-    // data.elements.nodes.forEach(e => {
-    //   nodes.push({
-    //     id: e.data.id,
-    //     metadata: {
-    //       fieldName: e.data.label,
-    //       tableName: e.data.parent,
-    //       objectKey: "",
-    //       nodeType: 1,
-    //       objectType: 1,
-    //     }
-    //   })
-    // });
-
-    // if (data.elements.hasOwnProperty('edges')) {
-    //   data.elements.edges.forEach(e => {
-    //     let nodeData = data.elements.nodes.filter(n => n.data.id == e.data.source);
-
-    //     if (nodeData.data.rol == "Link") {
-    //       edgeType = 0;
-    //     } else {
-    //       edgeType = 1;
-    //     }
-
-    //     nodes.push({
-    //       id: nodeData.data.id,
-    //       metadata: {
-    //         fieldName: nodeData.data.label,
-    //         tableName: nodeData.data.parent,
-    //         objectKey: "",
-    //         nodeType: 1,
-    //         objectType: 1,
-    //       }
-    //     })
-
-    //     edges.push({
-    //       source: e.data.source,
-    //       target: e.data.target,
-    //       directed: directed,
-    //       metadata: {
-    //         edgeType: edgeType
-    //       }
-    //     })
-    //   });
-    // }
-
-
-    let submitData = gql`
+    try {
+      let submitData = gql`
       mutation createMapping($nodes: [GraphNode], $edges: [GraphEdge]){
         createMapping(graph: {
           directed: true
@@ -390,66 +309,74 @@ export class AppComponent implements OnInit {
         }
       }
       `;
-    this.apollo.mutate({
-      mutation: submitData,
-      variables: {
-        nodes: this.graphInput.nodes,
-        edges: this.graphInput.edges
-      }
-    }).subscribe(res => {
-      let resData: any = res;
-      if (resData.data.createMapping.ok) {
-        let modalRef = this.modalService.open(SubmitOkComponent);
-      } else {
-        let modalRef = this.modalService.open(SubmitErrorComponent);
-      }
-    });
+      this.apollo.mutate({
+        mutation: submitData,
+        variables: {
+          nodes: this.graphInput.nodes,
+          edges: this.graphInput.edges
+        }
+      }).subscribe(res => {
+        let resData: any = res;
+        if (resData.data.createMapping.ok) {
+          let modalRef = this.modalService.open(SubmitOkComponent);
+        } else {
+          let modalRef = this.modalService.open(SubmitErrorComponent);
+        }
+      });
+    } catch (error) {
+      return error
+    }
   }
 
-  removeFromMappingInput (e) {
-    let sourceTableName = e.source().parent()._private.data.label;
-    let sourceFieldName = e.source()._private.data.label;
-    let sourceTypes = this.getMapTypes(sourceTableName);
-    let sourceId = `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`;
+  removeFromMappingInput(e) {
+    try {
+      let sourceTableName = e.source().parent()._private.data.label;
+      let sourceFieldName = e.source()._private.data.label;
+      let sourceTypes = this.getMapTypes(sourceTableName);
+      let sourceId = `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`;
 
-    let targetTableName = e.target().parent()._private.data.label;
-    let targetFieldName = e.target()._private.data.label;
-    let targetTypes = this.getMapTypes(targetTableName);
-    let targetId = `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`;
+      let targetTableName = e.target().parent()._private.data.label;
+      let targetFieldName = e.target()._private.data.label;
+      let targetTypes = this.getMapTypes(targetTableName);
+      let targetId = `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`;
 
-    // Find and remove nodes and edges from an array 
-    // https://love2dev.com/blog/javascript-remove-from-array/
-    for (let i = 0;i< this.graphInput.nodes.length; i++ ) {
-      if (this.graphInput.nodes[i].id === sourceId ){
-        this.graphInput.nodes.splice(i, 1);
-        i--;
-      } else if (this.graphInput.nodes[i].id === targetId) {
-        this.graphInput.nodes.splice(i, 1);
-        i--;
+      // Find and remove nodes and edges from an array 
+      // https://love2dev.com/blog/javascript-remove-from-array/
+      for (let i = 0; i < this.graphInput.nodes.length; i++) {
+        if (this.graphInput.nodes[i].id === sourceId) {
+          this.graphInput.nodes.splice(i, 1);
+          i--;
+        } else if (this.graphInput.nodes[i].id === targetId) {
+          this.graphInput.nodes.splice(i, 1);
+          i--;
+        }
       }
-    }
-    for (let i = 0; i < this.graphInput.edges.length; i++ ) {
-      if (this.graphInput.edges[i].source === sourceId && 
-        this.graphInput.edges[i].target === targetId){
-        this.graphInput.edges.splice(i, 1);
-        i--;
-      } 
+      for (let i = 0; i < this.graphInput.edges.length; i++) {
+        if (this.graphInput.edges[i].source === sourceId &&
+          this.graphInput.edges[i].target === targetId) {
+          this.graphInput.edges.splice(i, 1);
+          i--;
+        }
+      }
+    } catch (error) {
+      return error
     }
   }
 
   /** Given the parent of the given node, the following implications are present for the 'type' information
      *   we need to pass back to the mapping service
      */
-  getMapTypes (parentLabel) {
+  getMapTypes(parentLabel) {
+    try {
       if (parentLabel === this.inputParent) {
         return {
-          'objectType':'',
+          'objectType': '',
           'nodeType': 1,
           'objectKey': null
         }
       }
       // TODO: Loop through this.constraintParents to 
-      for (let i=0; i<this.constraintParents.length; i++){
+      for (let i = 0; i < this.constraintParents.length; i++) {
         if (this.constraintParents[i] === parentLabel) {
           return {
             'objectType': 1, // NOTE: This could be 1 or 2 theoretically
@@ -459,10 +386,10 @@ export class AppComponent implements OnInit {
         }
       }
       // Loop through this.uploadParents
-      for (let i=0; i<this.uploadParents.length; i++){
+      for (let i = 0; i < this.uploadParents.length; i++) {
         if (this.uploadParents[i] === parentLabel) {
           return {
-            'objectType':2,
+            'objectType': 2,
             'nodeType': 2,
             // Must remove the addition of 'Excel Sheet: ' for backend to do it's thing properly
             'objectKey': this.uploadParents[i]
@@ -470,12 +397,16 @@ export class AppComponent implements OnInit {
         }
       }
       throw Error("Created a node without a valid parent!");
-    };
+    } catch (error) {
+      return error
+    }
+  };
 
   /** Update the input for the mapper service to currently selected node_1 and node_2 which have had a valid
      * link created
      */
-  updateMappingInput () {
+  updateMappingInput() {
+    try {
       let sourceTableName = this.node_1.parent()._private.data.label;
       let sourceFieldName = this.node_1._private.data.label;
       let sourceTypes = this.getMapTypes(sourceTableName);
@@ -507,13 +438,16 @@ export class AppComponent implements OnInit {
       let listEnd = this.graphInput.nodes.length;
       this.graphInput.edges.push({
         directed: true,
-        source: this.graphInput.nodes[listEnd-2].id,
-        target: this.graphInput.nodes[listEnd-1].id,
+        source: this.graphInput.nodes[listEnd - 2].id,
+        target: this.graphInput.nodes[listEnd - 1].id,
         metadata: {
           edgeType: (this.node_1._private.data.rol === "Link") ? 0 : 1
         }
       })
-    };
+    } catch (error) {
+      return error
+    }
+  };
 
   /*
   * Main function to create the links between nodes
@@ -527,66 +461,73 @@ export class AppComponent implements OnInit {
    * @param idData field id
    */
   setTapNodes(idData: string) {
-    var self = this;
-    this.cy.on('tap', '#' + idData, function (e) {
-      if (!this.isParent()) {
-        if (self.tempNode_1 == null) {
-          self.node_1 = this;
-          self.tempNode_1 = this;
-        } else {
-          self.node_2 = this;
-          self.tempNode_2 = this;
-          self.setEdges(self.tempNode_2._private.data.id);
-          self.tempNode_1 = null;
-          self.tempNode_2 = null;
+    try {
+      var self = this;
+      this.cy.on('tap', '#' + idData, function (e) {
+        if (!this.isParent()) {
+          if (self.tempNode_1 == null) {
+            self.node_1 = this;
+            self.tempNode_1 = this;
+          } else {
+            self.node_2 = this;
+            self.tempNode_2 = this;
+            self.setEdges(self.tempNode_2._private.data.id);
+            self.tempNode_1 = null;
+            self.tempNode_2 = null;
+          }
+          self.selectNode(this._private);
         }
-        self.selectNode(this._private);
-      }
-    });
+      });
+    } catch (error) {
+      return error
+    }
   }
 
   /*
   * Generates a main node
   */
   createMainNode(nodes: MainNodeModel) {
+    try {
+      // create main node
+      this.cy.add({ data: { id: "mainNode", label: nodes.title, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
+      this.cy.style().selector('#mainNode').style({
+        "border-color": "#e2e2e2",
+        "background-color": "#fafafa",
+        "padding-left": 15
+      }).update();
 
-    // create main node
-    this.cy.add({ data: { id: "mainNode", label: nodes.title, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
-    this.cy.style().selector('#mainNode').style({
-      "border-color": "#e2e2e2",
-      "background-color": "#fafafa",
-      "padding-left": 15
-    }).update();
+      if (nodes.linkingFields.length > 0 || nodes.linkingFields.length > 0) {
 
-    if (nodes.linkingFields.length > 0 || nodes.linkingFields.length > 0) {
+        var lastY = 150;
 
-      var lastY = 150;
+        var elementStyle = { // Node styles, for more information see the Cytoscape information
+          'text-valign': 'center',
+          'text-halign': 'left',
+          'label': 'data(label)',
+          'shape': 'round-tag',
+          'width': '13',
+          'height': '13',
+          'text-margin-x': -5
+        }
 
-      var elementStyle = { // Node styles, for more information see the Cytoscape information
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
+        nodes.linkingFields.forEach(e => {
+          e.id = e.id ? e.id : this.getRandomId();
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link' }, grabbable: false, position: { x: 100, y: lastY } });
+          lastY += 30;
+          this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#4287f5' }).update();
+          this.setTapNodes(e.id);
+        });
+
+        nodes.dataFields.forEach(e => {
+          e.id = e.id ? e.id : this.getRandomId();
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data' }, grabbable: false, position: { x: 100, y: lastY } });
+          lastY += 30;
+          this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#32a836' }).update();
+          this.setTapNodes(e.id);
+        });
       }
-
-      nodes.linkingFields.forEach(e => {
-        e.id = e.id ? e.id : this.getRandomId();
-        this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link' }, grabbable: false, position: { x: 100, y: lastY } });
-        lastY += 30;
-        this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#4287f5' }).update();
-        this.setTapNodes(e.id);
-      });
-
-      nodes.dataFields.forEach(e => {
-        e.id = e.id ? e.id : this.getRandomId();
-        this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data' }, grabbable: false, position: { x: 100, y: lastY } });
-        lastY += 30;
-        this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#32a836' }).update();
-        this.setTapNodes(e.id);
-      });
+    } catch (error) {
+      return error
     }
   }
 
@@ -595,29 +536,33 @@ export class AppComponent implements OnInit {
    * @param nodes nodes to create
    */
   createExtraNodes(nodes: ExtraNodesModel[]) {
-    var lastX = this.cy.$(this.nodeParent).outerWidth() + 120;
+    try {
+      var lastX = this.cy.$(this.nodeParent).outerWidth() + 120;
 
-    nodes.forEach(e => {
-      var lastY = 150;
-      let parentID = this.getRandomId();
-      /* Create the nodes */
-      this.cy.add([{ data: { id: parentID, label: e.title } }]);
-      this.cy.style().selector('#' + parentID).style({
-        "border-color": "#e2e2e2",
-        "background-color": "#fafafa",
-        "padding-left": 15
-      }).update();
+      nodes.forEach(e => {
+        var lastY = 150;
+        let parentID = this.getRandomId();
+        /* Create the nodes */
+        this.cy.add([{ data: { id: parentID, label: e.title } }]);
+        this.cy.style().selector('#' + parentID).style({
+          "border-color": "#e2e2e2",
+          "background-color": "#fafafa",
+          "padding-left": 15
+        }).update();
 
-      e.fields.forEach(e => {
-        let idData = e.id ? e.id : this.getRandomId();
-        this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID }, grabbable: false, position: { x: lastX, y: lastY } }]);
-        this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
-        this.setTapNodes(idData);
-        lastY += 30;
+        e.fields.forEach(e => {
+          let idData = e.id ? e.id : this.getRandomId();
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID }, grabbable: false, position: { x: lastX, y: lastY } }]);
+          this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
+          this.setTapNodes(idData);
+          lastY += 30;
+        });
+        lastX += this.cy.$(parentID).outerWidth() + 50;
+
       });
-      lastX += this.cy.$(parentID).outerWidth() + 50;
-
-    });
+    } catch (error) {
+      return error
+    }
   }
 
   /*
