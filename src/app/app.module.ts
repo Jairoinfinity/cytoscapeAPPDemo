@@ -10,6 +10,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
 import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
 import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
+import { SubmitErrorDataComponent } from './components/submit-error-data/submit-error-data.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal
     ModalDataFieldComponent,
     SubmitOkComponent,
     SubmitErrorComponent,
-    ModalUploadExcelComponent
+    ModalUploadExcelComponent,
+    SubmitErrorDataComponent
   ],
   imports: [
     BrowserModule,
@@ -34,7 +36,8 @@ import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal
     ModalDataFieldComponent,
     SubmitOkComponent,
     SubmitErrorComponent,
-    ModalUploadExcelComponent
+    ModalUploadExcelComponent,
+    SubmitErrorDataComponent
   ]
 
 })
