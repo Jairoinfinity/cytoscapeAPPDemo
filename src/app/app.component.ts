@@ -16,6 +16,7 @@ import { Apollo } from 'apollo-angular';
 import gql from 'graphql-tag';
 import * as XLSX from 'xlsx';
 import { MappingGraph } from './mapgraph';
+import { SubmitErrorDataComponent } from './components/submit-error-data/submit-error-data.component';
 
 type AOA = any[][]; //AOA = Arrays of Arrays.
 
@@ -36,6 +37,7 @@ export class AppComponent implements OnInit {
   private constraintParents = ["Schedule"]; // All aliases for external services being mapped to
   private externalGqlEndpoint = "https://localhost:5001/graphql"; // <-- whatever your external schedule service is
   private uploadParents = [];
+  private parentsID = [];
 
   @Input() mainNodeData: MainNodeModel = {
     title: "Progress Items",
@@ -172,46 +174,47 @@ export class AppComponent implements OnInit {
     * Service for uploading an excel file to show 
     * the information in Cytoscape
     */
-   this.uploadExcelService.statusFile.subscribe(target => {
+    this.uploadExcelService.statusFile.subscribe(target => {
 
-    /* wire up file reader */
-    if (target.files.length !== 1) throw new Error('Cannot use multiple files');
-    const reader: FileReader = new FileReader();
-    reader.onload = (e: any) => {
-      /* read workbook */
-      const bstr: string = e.target.result;
-      const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
-      var s = 0;
-      let positionX = 200;
-      /* grab first sheet */
-      wb.SheetNames.forEach(wsname => {
-        const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+      /* wire up file reader */
+      if (target.files.length !== 1) throw new Error('Cannot use multiple files');
+      const reader: FileReader = new FileReader();
+      reader.onload = (e: any) => {
+        /* read workbook */
+        const bstr: string = e.target.result;
+        const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+        var s = 0;
+        let positionX = 200;
+        /* grab first sheet */
+        wb.SheetNames.forEach(wsname => {
+          const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
-        let idParent = this.getRandomId();
-        let positionY = 100;
+          let idParent = this.getRandomId();
+          let positionY = 100;
 
-        /* save data */
-        this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+          /* save data */
+          this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
 
-        let dataFilter = this.data.filter(d => d.length > 0);
+          let dataFilter = this.data.filter(d => d.length > 0);
 
-        /* Create the nodes */
-        this.cy.add([{ data: { id: idParent, label: wsname } }]);
-        for (var i = 0; i < dataFilter[0].length; i++) {
-          let idData = this.getRandomId();
-          this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: "Excel" }, grabbable: false, position: { x: positionX, y: positionY } }]);
-          this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
-          this.setTapNodes(idData);
-          positionY += 25;
+          /* Create the nodes */
+          this.cy.add([{ data: { id: idParent, label: wsname } }]);
+          this.parentsID.push(idParent);
+          for (var i = 0; i < dataFilter[0].length; i++) {
+            let idData = this.getRandomId();
+            this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: 2 }, grabbable: false, position: { x: positionX, y: positionY } }]);
+            this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
+            this.setTapNodes(idData);
+            positionY += 25;
 
 
-        }
-        positionX += 300;
-      });
+          }
+          positionX += 300;
+        });
 
-    };
-    reader.readAsBinaryString(target.files[0]);
-  })
+      };
+      reader.readAsBinaryString(target.files[0]);
+    })
 
     /*
     * Service in charge of creating a new Linking Field
@@ -338,15 +341,60 @@ export class AppComponent implements OnInit {
     let submitData = () => {
       this.submitData();
     }
+
+    let checkSubmitData = () => {
+      return this.checkSubmitData();;
+    }
+
+    let submitError = () => {
+      let modalRef = this.modalService.open(SubmitErrorDataComponent);
+    }
     /* It shows a json with all the information of the nodes */
     this.cy.on('tap', '#submitData', function () {
-      submitData();
+      if (checkSubmitData()) {
+        submitData();
+      }else{
+        submitError();
+      }
     })
 
     /* Displays the modal for selecting an excel file */
     this.cy.on('tap', '#upExcel', () => {
       let modalRef = this.modalService.open(ModalUploadExcelComponent);
     })
+  }
+
+  checkSubmitData() {
+    let edgesData = this.getDataJson();
+    let checkData = true;
+    let parents = [];
+    let checkParent = false;
+
+    if (edgesData.elements.hasOwnProperty('edges')){
+      for (let j = 0; j < edgesData.elements.nodes.length; j++) {
+        edgesData.elements.edges.forEach(e => {
+          let node = edgesData.elements.nodes[j].data.id;
+          let parentID = parents.filter(n => n == edgesData.elements.nodes[j].data.parent);
+  
+          if (parentID.length > 0) {
+            checkParent = true;
+          } else {
+            if (e.data.source == node || e.data.target == node && !checkParent) {
+              parents.push(edgesData.elements.nodes[j].data.parent);
+              checkParent = true;
+            }
+          }
+        });
+        checkParent = false;
+      }
+    }
+
+    if (parents.length != this.parentsID.length) {
+      checkData = false;
+    }
+
+
+    return checkData;
   }
 
   submitData() {
@@ -549,6 +597,8 @@ export class AppComponent implements OnInit {
         "padding-left": 15
       }).update();
 
+      this.parentsID.push("mainNode");
+
       if (nodes.linkingFields.length > 0 || nodes.linkingFields.length > 0) {
 
         var lastY = 150;
@@ -565,7 +615,7 @@ export class AppComponent implements OnInit {
 
         nodes.linkingFields.forEach(e => {
           e.id = e.id ? e.id : this.getRandomId();
-          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link' }, grabbable: false, position: { x: 100, y: lastY } });
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link', type: 1 }, grabbable: false, position: { x: 100, y: lastY } });
           lastY += 30;
           this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#4287f5' }).update();
           this.setTapNodes(e.id);
@@ -573,7 +623,7 @@ export class AppComponent implements OnInit {
 
         nodes.dataFields.forEach(e => {
           e.id = e.id ? e.id : this.getRandomId();
-          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data' }, grabbable: false, position: { x: 100, y: lastY } });
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data', type: 1 }, grabbable: false, position: { x: 100, y: lastY } });
           lastY += 30;
           this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#32a836' }).update();
           this.setTapNodes(e.id);
@@ -597,6 +647,7 @@ export class AppComponent implements OnInit {
         let parentID = this.getRandomId();
         /* Create the nodes */
         this.cy.add([{ data: { id: parentID, label: e.title } }]);
+        this.parentsID.push(parentID);
         this.cy.style().selector('#' + parentID).style({
           "border-color": "#e2e2e2",
           "background-color": "#fafafa",
@@ -605,7 +656,7 @@ export class AppComponent implements OnInit {
 
         e.fields.forEach(e => {
           let idData = e.id ? e.id : this.getRandomId();
-          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID }, grabbable: false, position: { x: lastX, y: lastY } }]);
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID, type: 0 }, grabbable: false, position: { x: lastX, y: lastY } }]);
           this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
           this.setTapNodes(idData);
           lastY += 30;
@@ -916,7 +967,12 @@ export class AppComponent implements OnInit {
         let color = this.node_2._private.style['background-color'].strValue;
 
         /* We create the link between nodes and give it its style */
-        this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } })
+        if (this.node_1._private.data.type == 2) {
+          this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: this.node_1._private.data.id, target: node } });
+        } else {
+          this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } });
+        }
+
         this.cy.style().selector('#' + node + '_' + this.node_1._private.data.id).style({
           'width': 3,
           'line-color': color,
