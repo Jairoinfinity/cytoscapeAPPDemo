@@ -9,6 +9,7 @@ import { GraphQLModule } from './services/graphql.module';
 import { HttpClientModule } from '@angular/common/http';
 import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
 import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
+import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
 
 @NgModule({
   declarations: [
@@ -17,6 +18,7 @@ import { SubmitErrorComponent } from './components/submit-error/submit-error.com
     ModalDataFieldComponent,
     SubmitOkComponent,
     SubmitErrorComponent,
+    ModalUploadExcelComponent
   ],
   imports: [
     BrowserModule,
@@ -32,6 +34,7 @@ import { SubmitErrorComponent } from './components/submit-error/submit-error.com
     ModalDataFieldComponent,
     SubmitOkComponent,
     SubmitErrorComponent,
+    ModalUploadExcelComponent
   ]
 
 })

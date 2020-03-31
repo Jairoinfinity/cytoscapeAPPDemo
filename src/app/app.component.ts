@@ -7,16 +7,17 @@ import { LinkingService } from './services/linkingservice.service';
 import { DataFieldService } from './services/data-field.service';
 import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
 import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
-
-import { linkingFieldIcon, dataFieldIcon, submitButtonIcon } from './icons';
+import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
+import { linkingFieldIcon, dataFieldIcon, submitButtonIcon, excelIcon } from './icons';
 import { MainNodeModel } from './models/mainNodeModel';
 import { ExtraNodesModel } from './models/extraNodesModel';
-
+import { UploadExcelService } from './services/upload-excel.service';
 import { Apollo } from 'apollo-angular';
 import gql from 'graphql-tag';
-
+import * as XLSX from 'xlsx';
 import { MappingGraph } from './mapgraph';
 
+type AOA = any[][]; //AOA = Arrays of Arrays.
 
 @Component({
   selector: 'mapper',
@@ -128,12 +129,14 @@ export class AppComponent implements OnInit {
   public tempNode_2 = null;
 
   public doubleTap = false;
+  data: AOA = [[1, 2], [3, 4]];
 
   constructor(
     private modalService: NgbModal,
     public linkingService: LinkingService,
     public dataFieldService: DataFieldService,
-    private apollo: Apollo
+    private apollo: Apollo,
+    public uploadExcelService: UploadExcelService
   ) { }
 
   ngOnInit() {
@@ -164,6 +167,51 @@ export class AppComponent implements OnInit {
 
     if (!this.extraNodesData) return;
     this.createExtraNodes(this.extraNodesData);
+
+    /*
+    * Service for uploading an excel file to show 
+    * the information in Cytoscape
+    */
+   this.uploadExcelService.statusFile.subscribe(target => {
+
+    /* wire up file reader */
+    if (target.files.length !== 1) throw new Error('Cannot use multiple files');
+    const reader: FileReader = new FileReader();
+    reader.onload = (e: any) => {
+      /* read workbook */
+      const bstr: string = e.target.result;
+      const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+      var s = 0;
+      let positionX = 200;
+      /* grab first sheet */
+      wb.SheetNames.forEach(wsname => {
+        const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+        let idParent = this.getRandomId();
+        let positionY = 100;
+
+        /* save data */
+        this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+
+        let dataFilter = this.data.filter(d => d.length > 0);
+
+        /* Create the nodes */
+        this.cy.add([{ data: { id: idParent, label: wsname } }]);
+        for (var i = 0; i < dataFilter[0].length; i++) {
+          let idData = this.getRandomId();
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: "Excel" }, grabbable: false, position: { x: positionX, y: positionY } }]);
+          this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
+          this.setTapNodes(idData);
+          positionY += 25;
+
+
+        }
+        positionX += 300;
+      });
+
+    };
+    reader.readAsBinaryString(target.files[0]);
+  })
 
     /*
     * Service in charge of creating a new Linking Field
@@ -293,6 +341,11 @@ export class AppComponent implements OnInit {
     /* It shows a json with all the information of the nodes */
     this.cy.on('tap', '#submitData', function () {
       submitData();
+    })
+
+    /* Displays the modal for selecting an excel file */
+    this.cy.on('tap', '#upExcel', () => {
+      let modalRef = this.modalService.open(ModalUploadExcelComponent);
     })
   }
 
@@ -679,9 +732,11 @@ export class AppComponent implements OnInit {
           { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 0, y: 30 } },
           { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 180, y: 30 } },
           { group: 'nodes', data: { id: 'submitDataIcon', label: 'Submit Data', parent: 'submitData' }, selected: false, grabbable: false, position: { x: 500, y: 30 } },
+          { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 645, y: 30 } },
           { data: { id: 'addLinking', label: '', parent: 'menu' }, selected: false, grabbable: false },
           { data: { id: 'addData', label: '', parent: 'menu' }, selected: false, grabbable: false },
           { data: { id: 'submitData', label: '', parent: 'menu' }, selected: false, grabbable: false },
+          { data: { id: 'upExcel', label: '', parent: 'menu' }, selected: false, grabbable: false },
           { data: { id: 'menu', label: '' } }
         ]
       );
@@ -717,6 +772,12 @@ export class AppComponent implements OnInit {
         'color': '#fff'
       }).update();
 
+      this.cy.style().selector('#uploadExcel').css(iconStyle).css({
+        'background-image': excelIcon,
+        'background-color': '#28a745',
+        'color': '#fff'
+      }).update();
+
       // add menu styles
       this.cy.style().selector('#menu').css({
         'shape': 'roundrectangle',
@@ -736,6 +797,11 @@ export class AppComponent implements OnInit {
       this.cy.style().selector('#submitData').css({
         'border-color': '#007bff',
         'background-color': '#007bff'
+      }).update();
+
+      this.cy.style().selector('#upExcel').css({
+        'border-color': '#28a745',
+        'background-color': '#28a745'
       }).update();
 
     } catch (error) {
@@ -793,7 +859,7 @@ export class AppComponent implements OnInit {
               'font-weight': 'bold',
               'shape': 'roundrectangle',
               'border-width': 2,
-              'border-color': '#3A7ECF',
+              'border-color': '#28a745',
               'text-margin-y': -8,
               'overlay-color': '#ccc',
               'overlay-padding': 5
