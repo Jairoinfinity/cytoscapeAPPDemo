@@ -199,7 +199,7 @@ export class AppComponent implements OnInit {
         this.cy.add([{ data: { id: idParent, label: wsname } }]);
         for (var i = 0; i < dataFilter[0].length; i++) {
           let idData = this.getRandomId();
-          this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: "Excel" }, grabbable: false, position: { x: positionX, y: positionY } }]);
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: 2 }, grabbable: false, position: { x: positionX, y: positionY } }]);
           this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
           this.setTapNodes(idData);
           positionY += 25;
@@ -338,8 +338,13 @@ export class AppComponent implements OnInit {
     let submitData = () => {
       this.submitData();
     }
+
+    let checkSubmitData = () => {
+      
+    }
     /* It shows a json with all the information of the nodes */
     this.cy.on('tap', '#submitData', function () {
+
       submitData();
     })
 
@@ -565,7 +570,7 @@ export class AppComponent implements OnInit {
 
         nodes.linkingFields.forEach(e => {
           e.id = e.id ? e.id : this.getRandomId();
-          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link' }, grabbable: false, position: { x: 100, y: lastY } });
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link', type: 1 }, grabbable: false, position: { x: 100, y: lastY } });
           lastY += 30;
           this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#4287f5' }).update();
           this.setTapNodes(e.id);
@@ -573,7 +578,7 @@ export class AppComponent implements OnInit {
 
         nodes.dataFields.forEach(e => {
           e.id = e.id ? e.id : this.getRandomId();
-          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data' }, grabbable: false, position: { x: 100, y: lastY } });
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data', type: 1 }, grabbable: false, position: { x: 100, y: lastY } });
           lastY += 30;
           this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#32a836' }).update();
           this.setTapNodes(e.id);
@@ -605,7 +610,7 @@ export class AppComponent implements OnInit {
 
         e.fields.forEach(e => {
           let idData = e.id ? e.id : this.getRandomId();
-          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID }, grabbable: false, position: { x: lastX, y: lastY } }]);
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID, type: 0 }, grabbable: false, position: { x: lastX, y: lastY } }]);
           this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
           this.setTapNodes(idData);
           lastY += 30;
@@ -916,7 +921,12 @@ export class AppComponent implements OnInit {
         let color = this.node_2._private.style['background-color'].strValue;
 
         /* We create the link between nodes and give it its style */
-        this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } })
+        if(this.node_1._private.data.type == 2){
+          this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: this.node_1._private.data.id, target: node } });
+        }else{
+          this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } });
+        }
+        
         this.cy.style().selector('#' + node + '_' + this.node_1._private.data.id).style({
           'width': 3,
           'line-color': color,
