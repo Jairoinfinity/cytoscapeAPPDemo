@@ -1,308 +1,91 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import cytoscape from 'cytoscape';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLinkingFieldComponent } from './components/modal-linking-field/modal-linking-field.component';
-import { ModalNewParentComponent } from './components/modal-new-parent/modal-new-parent.component';
 import { ModalDataFieldComponent } from './components/modal-data-field/modal-data-field.component';
-import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
 import { LinkingService } from './services/linkingservice.service';
 import { DataFieldService } from './services/data-field.service';
+import { SubmitOkComponent } from './components/submit-ok/submit-ok.component';
+import { SubmitErrorComponent } from './components/submit-error/submit-error.component';
+import { ModalUploadExcelComponent } from './components/modal-upload-excel/modal-upload-excel.component';
+import { linkingFieldIcon, dataFieldIcon, submitButtonIcon, excelIcon } from './icons';
+import { MainNodeModel } from './models/mainNodeModel';
+import { ExtraNodesModel } from './models/extraNodesModel';
 import { UploadExcelService } from './services/upload-excel.service';
-import { NewNodeService } from './services/new-node.service';
+import { Apollo } from 'apollo-angular';
+import gql from 'graphql-tag';
 import * as XLSX from 'xlsx';
+import { MappingGraph } from './mapgraph';
 
 type AOA = any[][]; //AOA = Arrays of Arrays.
 
 @Component({
-  selector: 'app-root',
+  selector: 'mapper',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  data: AOA = [[1, 2], [3, 4]];
-  public mainNodeData = [
-    { /* This first JSON, refers to the parent node  */
-      'Name': 'Progress Items', // Father's name
-      'Rol': 'Parent', // Type of node to be
-      'Locked': true // If it is blocked or can be moved freely
-    },
-    /* The next nodes will be the children */
+
+  public graphInput: MappingGraph = {
+    directed: true,
+    edges: [],
+    nodes: []
+  };
+
+  private inputParent = "Progress Items";
+  private constraintParents = ["Schedule"]; // All aliases for external services being mapped to
+  private externalGqlEndpoint = "https://localhost:5001/graphql"; // <-- whatever your external schedule service is
+  private uploadParents = [];
+
+  @Input() mainNodeData: MainNodeModel = {
+    title: "Progress Items",
+    linkingFields: [
+      {
+        label: "yo yo"
+      },
+      {
+        label: "blah balh"
+      }
+    ],
+    dataFields: [
+      {
+        label: "foo foo"
+      },
+      {
+        label: "baz baz"
+      }
+    ]
+  };
+
+  @Input() extraNodesData: ExtraNodesModel[] = [
     {
-      'Name': 'Task ID', // Child Node Name
-      'Rol': 'Link', // Type of node to be
-      'Parent': 'Progress Items', // Node Father
-      'Locked': true, // If it is blocked or can be moved freely
-      'Position': { // Node position
-        'x': 100,
-        'y': 100
+      title: "test 1",
+      fields: [{
+        label: "hello"
       },
-      'Style': { // Node styles, for more information see the Cytoscape information
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'PDS-L1',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 125
+      {
+        label: "vvvvv"
+      }]
+    },
+    {
+      title: "test 2",
+      fields: [{
+        label: "helloccc"
       },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'PDS-L2',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 150
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'PDS-L3',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 175
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'PDS-L4',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 200
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'LOC-L1',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 225
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'LOC-L2',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 250
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'LOC-L3',
-      'Rol': 'Link',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 275
-      },
-      'Style': {
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'label': 'data(label)',
-        'background-color': '#4287f5',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'Name',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 300
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'Planned Start',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 325
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'Planned Finish',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 350
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'Weight',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 375
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'Description',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 400
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
-    }, {
-      'Name': 'PDS-L4 Description',
-      'Rol': 'Data',
-      'Parent': 'Progress Items',
-      'Locked': true,
-      'Position': {
-        'x': 100,
-        'y': 425
-      },
-      'Style': {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'left',
-        'background-color': '#32a836',
-        'shape': 'round-tag',
-        'width': '13',
-        'height': '13',
-        'text-margin-x': -5
-      }
+      {
+        label: "mmmmm"
+      }]
     }
   ];
+
   public cy: cytoscape;
-  public nodeParent: String = null;
+  public nodeParent: String = "mainNode";
   public nodeStyle: any = {
     node: null,
     backgroundStyle: null
   };
   public colorEdge: String;
-  public linkingFeldStyle: any = {
+  public linkingFieldStyle: any = {
     "text-valign": "center",
     "text-halign": "left",
     'label': 'data(label)',
@@ -324,7 +107,7 @@ export class AppComponent implements OnInit {
     'text-margin-x': -5
   }
 
-  public dataStyleExcel: any = {
+  public dataStyleExtraNode: any = {
     'label': 'data(label)',
     "text-valign": "center",
     "text-halign": "right",
@@ -341,37 +124,25 @@ export class AppComponent implements OnInit {
   public dataField;
   public node_1 = null;
   public node_2 = null;
+
+  public tempNode_1 = null;
+  public tempNode_2 = null;
+
   public doubleTap = false;
+  data: AOA = [[1, 2], [3, 4]];
 
   constructor(
     private modalService: NgbModal,
     public linkingService: LinkingService,
     public dataFieldService: DataFieldService,
-    public uploadExcelService: UploadExcelService,
-    public newNodeService: NewNodeService
+    private apollo: Apollo,
+    public uploadExcelService: UploadExcelService
   ) { }
 
   ngOnInit() {
-    let node_1 = this.node_1;
-    let node_2 = this.node_2;
-    var getNode_1 = () => {
-      return this.node_1
-    }
-
-    var getNode_2 = () => {
-      return this.node_2
-    }
 
     var getDoubleTap = () => {
       return this.doubleTap
-    }
-
-    var setNode_1 = (node) => {
-      this.node_1 = node;
-    }
-
-    var setNode_2 = (node) => {
-      this.node_2 = node;
     }
 
     var setDoubleTap = (tap: boolean) => {
@@ -383,7 +154,6 @@ export class AppComponent implements OnInit {
     */
     this.initCytoscape();
 
-    this.newNodeService.statusFile.subscribe(node => this.nodeParent = node);
     /*
     * It removes any object of type 'Node' or 'Edge' that is 
     * passed to it by parameters.
@@ -392,103 +162,56 @@ export class AppComponent implements OnInit {
       this.deleteEdgeOrNode(e);
     }
 
-    var setTapNodes = (idData) => {
+    if (!this.mainNodeData) return;
+    this.createMainNode(this.mainNodeData);
 
-      this.cy.on('tap', '#' + idData, function (e) {
-        if (!this.isParent()) {
-          if (node_1 == null) {
-            setNode_1(this);
-            node_1 = getNode_1();
-          } else {
-            setNode_2(this);
-            node_2 = getNode_2();
-            setEdges(node_2._private.data.id);
-          }
-          selectNode(this._private);
-        }
-      });
-    }
-
-    /*
-    * Generates a main node that is parameterized as an array
-    */
-    var mainNode = (nodes) => {
-      if (nodes.length > 0) {
-        nodes.forEach(e => {
-          let idNode = this.getRandomId();
-          if (e.Rol == 'Parent') {
-            this.nodeParent = idNode;
-            if (e.Locked) {
-              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
-            } else {
-              this.cy.add({ data: { id: idNode, label: e.Name, rol: 'Parent' } });
-            }
-
-            if (e.hasOwnProperty('Style')) {
-              this.cy.style().selector('#' + idNode).style(e.Style).update();
-            }
-          } else {
-            if (e.Locked) {
-              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, grabbable: false, position: { x: e.Position.x, y: e.Position.y } });
-            } else {
-              this.cy.add({ group: 'nodes', data: { id: idNode, label: e.Name, parent: this.nodeParent, rol: e.Rol }, position: { x: e.Position.x, y: e.Position.y } });
-            }
-
-            if (e.hasOwnProperty('Style')) {
-              this.cy.style().selector('#' + idNode).style(e.Style).update();
-            }
-          }
-          setTapNodes(idNode);
-        });
-      }
-    }
-
-    mainNode(this.mainNodeData);
+    if (!this.extraNodesData) return;
+    this.createExtraNodes(this.extraNodesData);
 
     /*
     * Service for uploading an excel file to show 
     * the information in Cytoscape
     */
-    this.uploadExcelService.statusFile.subscribe(target => {
+   this.uploadExcelService.statusFile.subscribe(target => {
 
-      /* wire up file reader */
-      if (target.files.length !== 1) throw new Error('Cannot use multiple files');
-      const reader: FileReader = new FileReader();
-      reader.onload = (e: any) => {
-        /* read workbook */
-        const bstr: string = e.target.result;
-        const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
-        var s = 0;
-        let positionX = 200;
-        /* grab first sheet */
-        wb.SheetNames.forEach(wsname => {
-          const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+    /* wire up file reader */
+    if (target.files.length !== 1) throw new Error('Cannot use multiple files');
+    const reader: FileReader = new FileReader();
+    reader.onload = (e: any) => {
+      /* read workbook */
+      const bstr: string = e.target.result;
+      const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+      var s = 0;
+      let positionX = 200;
+      /* grab first sheet */
+      wb.SheetNames.forEach(wsname => {
+        const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
-          let idParent = this.getRandomId();
-          let positionY = 100;
+        let idParent = this.getRandomId();
+        let positionY = 100;
 
-          /* save data */
-          this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+        /* save data */
+        this.data = <AOA>(XLSX.utils.sheet_to_json(ws, { header: 1 }));
 
-          let dataFilter = this.data.filter(d => d.length > 0);
+        let dataFilter = this.data.filter(d => d.length > 0);
 
-          /* Create the nodes */
-          this.cy.add([{ data: { id: idParent, label: 'Excel Sheet: ' + wsname } }]);
-          for (var i = 0; i < dataFilter[0].length; i++) {
-            let idData = this.getRandomId();
-            this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent }, grabbable: false, position: { x: positionX, y: positionY } }]);
-            this.cy.style().selector('#' + idData).style(this.dataStyleExcel).update();
-            setTapNodes(idData);
-            positionY += 25;
+        /* Create the nodes */
+        this.cy.add([{ data: { id: idParent, label: wsname } }]);
+        for (var i = 0; i < dataFilter[0].length; i++) {
+          let idData = this.getRandomId();
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: dataFilter[0][i], parent: idParent, type: "Excel" }, grabbable: false, position: { x: positionX, y: positionY } }]);
+          this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
+          this.setTapNodes(idData);
+          positionY += 25;
 
 
-          }
-          positionX += 300;
-        });
+        }
+        positionX += 300;
+      });
 
-      };
-      reader.readAsBinaryString(target.files[0]);
-    })
+    };
+    reader.readAsBinaryString(target.files[0]);
+  })
 
     /*
     * Service in charge of creating a new Linking Field
@@ -511,25 +234,42 @@ export class AppComponent implements OnInit {
       /* Check if there are already 'Link' type nodes to choose the position of the last node */
       if (nodosLikns.length > 0) {
         lastNode = nodosLikns[nodosLikns.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       }
 
       /* Create the new node and add the style */
       this.cy.add([{ group: 'nodes', data: { id: idLink, label: data, parent: this.nodeParent, rol: 'Link' }, grabbable: false, position: { x: 100, y: positionY } }]);
-      this.cy.style().selector('#' + idLink).style(this.linkingFeldStyle).update();
+      this.cy.style().selector('#' + idLink).style(this.linkingFieldStyle).update();
 
       /* Checks for 'Data' type nodes and if there are, removes them and adds them in a lower position */
       if (nodosData.length > 0) {
         nodosData.forEach(e => {
-          let data = e;
           this.cy.remove('#' + e.data.id);
-          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 25) } }]);
+          this.cy.add([{ group: 'nodes', data: { id: e.data.id, label: e.data.label, parent: this.nodeParent, rol: 'Data' }, grabbable: false, position: { x: 100, y: (e.position.y + 30) } }]);
           this.cy.style().selector('#' + e.data.id).style(this.dataFieldStyle).update();
+
+          let edgesData = json.elements.edges.filter(n => n.data.source == e.data.id);
+
+          edgesData.forEach(edge => {
+            this.cy.remove('#' + edge.data.id);
+
+            /* We create the link between nodes and give it its style */
+            this.cy.add({ group: 'edges', data: { id: edge.data.id, source: edge.data.source, target: edge.data.target } });
+            this.cy.style().selector('#' + edge.data.id).style({
+              'width': 3,
+              'line-color': "green",
+              'target-arrow-color': "green",
+              'target-arrow-shape': 'triangle',
+              "curve-style": "unbundled-bezier",
+              "control-point-distances": [5, -5],
+              "control-point-weights": [0.250, 0.75]
+            }).update();
+          });
         });
       }
 
       /* Adds Click or tap functionality to new nodes */
-      setTapNodes(idLink);
+      this.setTapNodes(idLink);
     })
 
     /* Service in charge of creating new 'Data Field' nodes */
@@ -551,10 +291,10 @@ export class AppComponent implements OnInit {
       /* Check if there are 'Data' type nodes, if so, get the last position */
       if (nodosData.length > 0) {
         lastNode = nodosData[nodosData.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       } else if (nodosLikns.length > 0) { /* If no 'Data' nodes exist, check the 'Link' nodes to get the last position */
         lastNode = nodosLikns[nodosLikns.length - 1];
-        positionY = (lastNode.position.y + 25);
+        positionY = (lastNode.position.y + 30);
       }
 
       /* Create the new node and add the style */
@@ -562,24 +302,8 @@ export class AppComponent implements OnInit {
       this.cy.style().selector('#' + idData).style(this.dataFieldStyle).update();
 
       /* Adds Click or tap functionality to new nodes */
-      setTapNodes(idData);
+      this.setTapNodes(idData);
     })
-
-    /*
-    * Main function to create the links between nodes
-    */
-    let setEdges = (node) => {
-      this.setEdges(node);
-      node_1 = null;
-      node_2 = null;
-    }
-
-    /*
-    * Changes the color of the selected node to mark it 
-    */
-    let selectNode = (node) => {
-      this.selectNode(node);
-    }
 
     /* Add the menu */
     this.addMenu();
@@ -604,33 +328,294 @@ export class AppComponent implements OnInit {
     /* Displays the modal for introducing a new Linking Field */
     this.cy.on('tap', '#addLinking', () => {
       let modalRef = this.modalService.open(ModalLinkingFieldComponent);
-      if (this.nodeParent == null) {
-        let modalRef = this.modalService.open(ModalNewParentComponent);
-      }
     })
 
     /* Displays the modal for entering a new Data Field */
     this.cy.on('tap', '#addData', () => {
       let modalRef = this.modalService.open(ModalDataFieldComponent);
-      if (this.nodeParent == null) {
-        let modalRef = this.modalService.open(ModalNewParentComponent);
-      }
+    })
+
+    let submitData = () => {
+      this.submitData();
+    }
+    /* It shows a json with all the information of the nodes */
+    this.cy.on('tap', '#submitData', function () {
+      submitData();
     })
 
     /* Displays the modal for selecting an excel file */
     this.cy.on('tap', '#upExcel', () => {
       let modalRef = this.modalService.open(ModalUploadExcelComponent);
     })
+  }
 
-    /* Return a json with all the node information */
-    var dataJSON = () => {
-      return this.cy.json();
+  submitData() {
+    try {
+      let submitData = gql`
+      mutation createMapping($nodes: [GraphNode], $edges: [GraphEdge]){
+        createMapping(graph: {
+          directed: true
+          nodes: $nodes
+          edges: $edges
+        }) {
+          ok
+        }
+      }
+      `;
+      this.apollo.mutate({
+        mutation: submitData,
+        variables: {
+          nodes: this.graphInput.nodes,
+          edges: this.graphInput.edges
+        }
+      }).subscribe(res => {
+        let resData: any = res;
+        if (resData.data.createMapping.ok) {
+          let modalRef = this.modalService.open(SubmitOkComponent);
+        } else {
+          let modalRef = this.modalService.open(SubmitErrorComponent);
+        }
+      });
+    } catch (error) {
+      return error
     }
+  }
 
-    /* It shows a json with all the information of the nodes */
-    this.cy.on('tap', '#getJson', function () {
-      console.log(dataJSON());
-    })
+  removeFromMappingInput(e) {
+    try {
+      let sourceTableName = e.source().parent()._private.data.label;
+      let sourceFieldName = e.source()._private.data.label;
+      let sourceTypes = this.getMapTypes(sourceTableName);
+      let sourceId = `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`;
+
+      let targetTableName = e.target().parent()._private.data.label;
+      let targetFieldName = e.target()._private.data.label;
+      let targetTypes = this.getMapTypes(targetTableName);
+      let targetId = `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`;
+
+      // Find and remove nodes and edges from an array 
+      // https://love2dev.com/blog/javascript-remove-from-array/
+      for (let i = 0; i < this.graphInput.nodes.length; i++) {
+        if (this.graphInput.nodes[i].id === sourceId) {
+          this.graphInput.nodes.splice(i, 1);
+          i--;
+        } else if (this.graphInput.nodes[i].id === targetId) {
+          this.graphInput.nodes.splice(i, 1);
+          i--;
+        }
+      }
+      for (let i = 0; i < this.graphInput.edges.length; i++) {
+        if (this.graphInput.edges[i].source === sourceId &&
+          this.graphInput.edges[i].target === targetId) {
+          this.graphInput.edges.splice(i, 1);
+          i--;
+        }
+      }
+    } catch (error) {
+      return error
+    }
+  }
+
+  /** Given the parent of the given node, the following implications are present for the 'type' information
+     *   we need to pass back to the mapping service
+     */
+  getMapTypes(parentLabel) {
+    try {
+      if (parentLabel === this.inputParent) {
+        return {
+          'objectType': '',
+          'nodeType': 1,
+          'objectKey': null
+        }
+      }
+      // TODO: Loop through this.constraintParents to 
+      for (let i = 0; i < this.constraintParents.length; i++) {
+        if (this.constraintParents[i] === parentLabel) {
+          return {
+            'objectType': 1, // NOTE: This could be 1 or 2 theoretically
+            'nodeType': 0,
+            'objectKey': this.externalGqlEndpoint // TODO: Replace hard coded
+          };
+        }
+      }
+      // Loop through this.uploadParents
+      for (let i = 0; i < this.uploadParents.length; i++) {
+        if (this.uploadParents[i] === parentLabel) {
+          return {
+            'objectType': 2,
+            'nodeType': 2,
+            // Must remove the addition of 'Excel Sheet: ' for backend to do it's thing properly
+            'objectKey': this.uploadParents[i]
+          };
+        }
+      }
+      throw Error("Created a node without a valid parent!");
+    } catch (error) {
+      return error
+    }
+  };
+
+  /** Update the input for the mapper service to currently selected node_1 and node_2 which have had a valid
+     * link created
+     */
+  updateMappingInput() {
+    try {
+      let sourceTableName = this.node_1.parent()._private.data.label;
+      let sourceFieldName = this.node_1._private.data.label;
+      let sourceTypes = this.getMapTypes(sourceTableName);
+
+      let targetTableName = this.node_2.parent()._private.data.label;
+      let targetFieldName = this.node_2._private.data.label;
+      let targetTypes = this.getMapTypes(targetTableName);
+
+      this.graphInput.nodes.push({
+        id: `${sourceTypes.objectType}#${sourceTableName}#${sourceFieldName}`,
+        metadata: {
+          fieldName: sourceFieldName,
+          tableName: sourceTableName,
+          objectKey: sourceTypes.objectKey,
+          nodeType: sourceTypes.nodeType,
+          objectType: (typeof sourceTypes.objectType === 'string') ? null : sourceTypes.objectType
+        }
+      });
+      this.graphInput.nodes.push({
+        id: `${targetTypes.objectType}#${targetTableName}#${targetFieldName}`,
+        metadata: {
+          fieldName: targetFieldName,
+          tableName: targetTableName,
+          objectKey: targetTypes.objectKey,
+          nodeType: targetTypes.nodeType,
+          objectType: (typeof sourceTypes.objectType === 'string') ? null : sourceTypes.objectType
+        }
+      });
+      let listEnd = this.graphInput.nodes.length;
+      this.graphInput.edges.push({
+        directed: true,
+        source: this.graphInput.nodes[listEnd - 2].id,
+        target: this.graphInput.nodes[listEnd - 1].id,
+        metadata: {
+          edgeType: (this.node_1._private.data.rol === "Link") ? 0 : 1
+        }
+      })
+    } catch (error) {
+      return error
+    }
+  };
+
+  /*
+  * Main function to create the links between nodes
+  */
+  setLinkEdges(node) {
+    this.setEdges(node);
+  }
+
+  /**
+   * field click function
+   * @param idData field id
+   */
+  setTapNodes(idData: string) {
+    try {
+      var self = this;
+      this.cy.on('tap', '#' + idData, function (e) {
+        if (!this.isParent()) {
+          if (self.tempNode_1 == null) {
+            self.node_1 = this;
+            self.tempNode_1 = this;
+          } else {
+            self.node_2 = this;
+            self.tempNode_2 = this;
+            self.setEdges(self.tempNode_2._private.data.id);
+            self.tempNode_1 = null;
+            self.tempNode_2 = null;
+          }
+          self.selectNode(this._private);
+        }
+      });
+    } catch (error) {
+      return error
+    }
+  }
+
+  /*
+  * Generates a main node
+  */
+  createMainNode(nodes: MainNodeModel) {
+    try {
+      // create main node
+      this.cy.add({ data: { id: "mainNode", label: nodes.title, rol: 'Parent' }, selected: false, selectable: false, locked: true, grabbable: false, pannable: false });
+      this.cy.style().selector('#mainNode').style({
+        "border-color": "#e2e2e2",
+        "background-color": "#fafafa",
+        "padding-left": 15
+      }).update();
+
+      if (nodes.linkingFields.length > 0 || nodes.linkingFields.length > 0) {
+
+        var lastY = 150;
+
+        var elementStyle = { // Node styles, for more information see the Cytoscape information
+          'text-valign': 'center',
+          'text-halign': 'left',
+          'label': 'data(label)',
+          'shape': 'round-tag',
+          'width': '13',
+          'height': '13',
+          'text-margin-x': -5
+        }
+
+        nodes.linkingFields.forEach(e => {
+          e.id = e.id ? e.id : this.getRandomId();
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Link' }, grabbable: false, position: { x: 100, y: lastY } });
+          lastY += 30;
+          this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#4287f5' }).update();
+          this.setTapNodes(e.id);
+        });
+
+        nodes.dataFields.forEach(e => {
+          e.id = e.id ? e.id : this.getRandomId();
+          this.cy.add({ group: 'nodes', data: { id: e.id, label: e.label, parent: "mainNode", rol: 'Data' }, grabbable: false, position: { x: 100, y: lastY } });
+          lastY += 30;
+          this.cy.style().selector('#' + e.id).style(elementStyle).css({ 'background-color': '#32a836' }).update();
+          this.setTapNodes(e.id);
+        });
+      }
+    } catch (error) {
+      return error
+    }
+  }
+
+  /**
+   * creates extra nodes from the 
+   * @param nodes nodes to create
+   */
+  createExtraNodes(nodes: ExtraNodesModel[]) {
+    try {
+      var lastX = this.cy.$(this.nodeParent).outerWidth() + 120;
+
+      nodes.forEach(e => {
+        var lastY = 150;
+        let parentID = this.getRandomId();
+        /* Create the nodes */
+        this.cy.add([{ data: { id: parentID, label: e.title } }]);
+        this.cy.style().selector('#' + parentID).style({
+          "border-color": "#e2e2e2",
+          "background-color": "#fafafa",
+          "padding-left": 15
+        }).update();
+
+        e.fields.forEach(e => {
+          let idData = e.id ? e.id : this.getRandomId();
+          this.cy.add([{ group: 'nodes', data: { id: idData, label: e.label, parent: parentID }, grabbable: false, position: { x: lastX, y: lastY } }]);
+          this.cy.style().selector('#' + idData).style(this.dataStyleExtraNode).update();
+          this.setTapNodes(idData);
+          lastY += 30;
+        });
+        lastX += this.cy.$(parentID).outerWidth() + 50;
+
+      });
+    } catch (error) {
+      return error
+    }
   }
 
   /*
@@ -744,74 +729,81 @@ export class AppComponent implements OnInit {
     try {
       this.cy.add(
         [
-          { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 200, y: 30 } },
-          { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 375, y: 30 } },
-          { group: 'nodes', data: { id: 'getJsonData', label: 'Generate Data JSON', parent: 'getJson' }, selected: false, grabbable: false, position: { x: 600, y: 30 } },
-          { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 805, y: 30 } },
-          { data: { id: 'addLinking', label: '', parent: 'Menu' }, selected: false, grabbable: false },
-          { data: { id: 'addData', label: '', parent: 'Menu' }, selected: false, grabbable: false },
-          { data: { id: 'getJson', label: '', parent: 'Menu' }, selected: false, grabbable: false },
-          { data: { id: 'upExcel', label: '', parent: 'Menu' }, selected: false, grabbable: false },
-          { data: { id: 'Menu', label: 'Menu' } }
+          { group: 'nodes', data: { id: 'addLinkingField', label: 'Add Linking Field', parent: 'addLinking' }, selected: false, grabbable: false, position: { x: 0, y: 30 } },
+          { group: 'nodes', data: { id: 'addDataField', label: 'Add Data Field', parent: 'addData' }, selected: false, grabbable: false, position: { x: 180, y: 30 } },
+          { group: 'nodes', data: { id: 'submitDataIcon', label: 'Submit Data', parent: 'submitData' }, selected: false, grabbable: false, position: { x: 500, y: 30 } },
+          { group: 'nodes', data: { id: 'uploadExcel', label: 'Upload Excel', parent: 'upExcel' }, selected: false, grabbable: false, position: { x: 645, y: 30 } },
+          { data: { id: 'addLinking', label: '', parent: 'menu' }, selected: false, grabbable: false },
+          { data: { id: 'addData', label: '', parent: 'menu' }, selected: false, grabbable: false },
+          { data: { id: 'submitData', label: '', parent: 'menu' }, selected: false, grabbable: false },
+          { data: { id: 'upExcel', label: '', parent: 'menu' }, selected: false, grabbable: false },
+          { data: { id: 'menu', label: '' } }
         ]
       );
 
-      /* Add all styles */
-      this.cy.style().selector('#addLinkingField').css({
+      var iconStyle = {
         'label': 'data(label)',
         "text-valign": "center",
         "text-halign": "right",
-        'background-color': 'white',
-        'background-image': './assets/ico/link.png',
         "width": "20",
         "height": "20",
         "shape": "rectangle",
         'background-fit': 'cover cover',
         'background-image-opacity': 1,
-        'text-margin-x': 5
+        'text-margin-x': 5,
+        'background-color': '#fff',
+      }
+
+      /* Add icon styles */
+      this.cy.style().selector('#addLinkingField').css(iconStyle).css({
+        'background-image': linkingFieldIcon,
+        'background-color': '#fff',
+        'color': '#007bff'
       }).update();
 
-      this.cy.style().selector('#addDataField').css({
-        'label': 'data(label)',
-        "text-valign": "center",
-        "text-halign": "right",
-        'background-color': 'white',
-        'background-image': './assets/ico/data.png',
-        "width": "20",
-        "height": "20",
-        "shape": "rectangle",
-        'background-fit': 'cover cover',
-        'background-image-opacity': 1,
-        'text-margin-x': 5
+      this.cy.style().selector('#addDataField').css(iconStyle).css({
+        'background-image': dataFieldIcon,
+        'color': '#28a745'
       }).update();
 
-      this.cy.style().selector('#getJsonData').css({
-        'label': 'data(label)',
-        "text-valign": "center",
-        "text-halign": "right",
-        'background-color': 'white',
-        'background-image': './assets/ico/json.png',
-        "width": "20",
-        "height": "20",
-        "shape": "rectangle",
-        'background-fit': 'cover cover',
-        'background-image-opacity': 1,
-        'text-margin-x': 5
+      this.cy.style().selector('#submitDataIcon').css(iconStyle).css({
+        'background-image': submitButtonIcon,
+        'background-color': '#007bff',
+        'color': '#fff'
       }).update();
 
-      this.cy.style().selector('#uploadExcel').css({
-        'label': 'data(label)',
-        "text-valign": "center",
-        "text-halign": "right",
-        'background-color': 'white',
-        'background-image': './assets/ico/excel.png',
-        "width": "20",
-        "height": "20",
-        "shape": "rectangle",
-        'background-fit': 'cover cover',
-        'background-image-opacity': 1,
-        'text-margin-x': 5
+      this.cy.style().selector('#uploadExcel').css(iconStyle).css({
+        'background-image': excelIcon,
+        'background-color': '#28a745',
+        'color': '#fff'
       }).update();
+
+      // add menu styles
+      this.cy.style().selector('#menu').css({
+        'shape': 'roundrectangle',
+        'border-color': '#dae0e5',
+        'background-color': '#e2e6ea'
+      }).update();
+
+      // add button styles
+      this.cy.style().selector('#addLinking').css({
+        'border-color': '#007bff'
+      }).update();
+
+      this.cy.style().selector('#addData').css({
+        'border-color': '#28a745'
+      }).update();
+
+      this.cy.style().selector('#submitData').css({
+        'border-color': '#007bff',
+        'background-color': '#007bff'
+      }).update();
+
+      this.cy.style().selector('#upExcel').css({
+        'border-color': '#28a745',
+        'background-color': '#28a745'
+      }).update();
+
     } catch (error) {
       return error
     }
@@ -838,6 +830,7 @@ export class AppComponent implements OnInit {
     */
   deleteEdgeOrNode(e) {
     try {
+      this.removeFromMappingInput(e);
       this.cy.remove(e);
     } catch (error) {
       return error
@@ -852,6 +845,8 @@ export class AppComponent implements OnInit {
       this.cy = cytoscape({
 
         container: document.getElementById('cy'),
+        minZoom: 0.3,
+        maxZoom: 1,
 
         style: [
           {
@@ -864,7 +859,7 @@ export class AppComponent implements OnInit {
               'font-weight': 'bold',
               'shape': 'roundrectangle',
               'border-width': 2,
-              'border-color': '#3A7ECF',
+              'border-color': '#28a745',
               'text-margin-y': -8,
               'overlay-color': '#ccc',
               'overlay-padding': 5
@@ -890,7 +885,7 @@ export class AppComponent implements OnInit {
           name: 'grid',
           rows: 1
         },
-        pan: { x: 200, y: 50 }
+        pan: { x: 50, y: 20 }
       });
     } catch (error) {
       return error
@@ -932,10 +927,13 @@ export class AppComponent implements OnInit {
           "control-point-weights": [0.250, 0.75]
         }).update();
       }
+      this.updateMappingInput();
       this.node_1 = null;
       this.node_2 = null;
     } catch (error) {
       return error
     }
   }
+
+
 }
