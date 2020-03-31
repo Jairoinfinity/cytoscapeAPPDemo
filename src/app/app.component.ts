@@ -953,7 +953,16 @@ export class AppComponent implements OnInit {
         let color = this.colorEdge;
 
         /* We create the link between nodes and give it its style */
-        this.cy.add({ group: 'edges', data: { id: this.node_1._private.data.id + '_' + node, source: this.node_1._private.data.id, target: node } });
+        if (this.node_2._private.data.type == 2 || this.node_1._private.data.type == 2) {
+          if(this.node_1._private.data.rol == "Link"){
+            this.cy.add({ group: 'edges', data: { id: this.node_1._private.data.id + '_' + node, source: node, target: this.node_1._private.data.id } });
+          }else{
+            this.cy.add({ group: 'edges', data: { id: this.node_1._private.data.id + '_' + node, source: this.node_1._private.data.id, target: node } });
+          }
+        } else {
+          this.cy.add({ group: 'edges', data: { id: this.node_1._private.data.id + '_' + node, source: this.node_1._private.data.id, target: node } });
+        }
+        
         this.cy.style().selector('#' + this.node_1._private.data.id + '_' + node).style({
           'width': 3,
           'line-color': color,
@@ -967,8 +976,12 @@ export class AppComponent implements OnInit {
         let color = this.node_2._private.style['background-color'].strValue;
 
         /* We create the link between nodes and give it its style */
-        if (this.node_1._private.data.type == 2) {
-          this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: this.node_1._private.data.id, target: node } });
+        if (this.node_2._private.data.type == 2 || this.node_1._private.data.type == 2) {
+          if(this.node_2._private.data.rol == "Link"){
+            this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: this.node_1._private.data.id, target: node } });
+          }else{
+            this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } });
+          }
         } else {
           this.cy.add({ group: 'edges', data: { id: node + '_' + this.node_1._private.data.id, source: node, target: this.node_1._private.data.id } });
         }
