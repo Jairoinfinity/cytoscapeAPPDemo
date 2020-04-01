@@ -367,31 +367,7 @@ export class AppComponent implements OnInit {
   checkSubmitData() {
     let edgesData = this.getDataJson();
     let checkData = true;
-    let parents = [];
-    let checkParent = false;
-
-    /*if (edgesData.elements.hasOwnProperty('edges')){
-      for (let j = 0; j < edgesData.elements.nodes.length; j++) {
-        edgesData.elements.edges.forEach(e => {
-          let node = edgesData.elements.nodes[j].data.id;
-          let parentID = parents.filter(n => n == edgesData.elements.nodes[j].data.parent);
-  
-          if (parentID.length > 0) {
-            checkParent = true;
-          } else {
-            if (e.data.source == node || e.data.target == node && !checkParent) {
-              parents.push(edgesData.elements.nodes[j].data.parent);
-              checkParent = true;
-            }
-          }
-        });
-        checkParent = false;
-      }
-    }
-
-    if (parents.length != this.parentsID.length) {
-      checkData = false;
-    }*/
+    
     if (!edgesData.elements.hasOwnProperty('edges')) {
       checkData = false;
     }
