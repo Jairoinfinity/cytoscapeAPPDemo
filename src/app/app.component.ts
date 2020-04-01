@@ -370,7 +370,7 @@ export class AppComponent implements OnInit {
     let parents = [];
     let checkParent = false;
 
-    if (edgesData.elements.hasOwnProperty('edges')){
+    /*if (edgesData.elements.hasOwnProperty('edges')){
       for (let j = 0; j < edgesData.elements.nodes.length; j++) {
         edgesData.elements.edges.forEach(e => {
           let node = edgesData.elements.nodes[j].data.id;
@@ -390,6 +390,9 @@ export class AppComponent implements OnInit {
     }
 
     if (parents.length != this.parentsID.length) {
+      checkData = false;
+    }*/
+    if (!edgesData.elements.hasOwnProperty('edges')) {
       checkData = false;
     }
 
